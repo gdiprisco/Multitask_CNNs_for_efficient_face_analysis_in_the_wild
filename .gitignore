@@ -1,6 +1,7 @@
 __pycache__
 .vscode
 venv
+.gitignore
 
 dataset/__pycache__
 dataset/cache/*
