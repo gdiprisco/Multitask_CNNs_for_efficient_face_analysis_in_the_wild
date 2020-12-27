@@ -1,0 +1,64 @@
+python3 train.py --net resnet50 --version verA --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 128 --lr 0.005:0.2:20 --sel_gpu 1 --training-epochs 70 --weight_decay 0.005 --momentum
+python3 train.py --net resnet50 --version verB --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 128 --lr 0.005:0.2:20 --sel_gpu 1 --training-epochs 70 --weight_decay 0.005 --momentum
+python3 train.py --net resnet50 --version verC --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 128 --lr 0.005:0.2:20 --sel_gpu 1 --training-epochs 70 --weight_decay 0.005 --momentum
+
+python3 train.py --net seresnet50 --version verA --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 128 --lr 0.005:0.2:20 --sel_gpu 1 --training-epochs 70 --weight_decay 0.005 --momentum
+python3 train.py --net seresnet50 --version verB --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 128 --lr 0.005:0.2:20 --sel_gpu 1 --training-epochs 70 --weight_decay 0.005 --momentum
+python3 train.py --net seresnet50 --version verC --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 128 --lr 0.005:0.2:20 --sel_gpu 1 --training-epochs 70 --weight_decay 0.005 --momentum
+
+python3 train.py --net mobilenetv3 --version verA --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 128 --lr 0.005:0.2:20 --sel_gpu 1 --training-epochs 70 --weight_decay 0.005 --momentum
+python3 train.py --net mobilenetv3 --version verB --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 128 --lr 0.005:0.2:20 --sel_gpu 1 --training-epochs 70 --weight_decay 0.005 --momentum
+python3 train.py --net mobilenetv3 --version verC --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 128 --lr 0.005:0.2:20 --sel_gpu 1 --training-epochs 70 --weight_decay 0.005 --momentum
+
+@@@
+python3 train.py --net resnet50 --version verA --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 128 --lr 0.005:0.2:20 --sel_gpu 1 --training-epochs 70
+python3 train.py --net mobilenetv3 --version verA --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 128 --lr 0.005:0.2:20 --sel_gpu 1 --training-epochs 70 
+python3 train.py --net seresnet50 --version verB --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 128 --lr 0.005:0.2:20 --sel_gpu 1 --training-epochs 70 
+
+
+python3 train.py --net seresnet50 --version verA --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 128 --lr 0.005:0.2:90 --sel_gpu 1 --training-epochs 200
+python3 train.py --net mobilenetv3 --version verA --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 128 --lr 0.005:0.2:90 --sel_gpu 0 --training-epochs 200
+python3 train.py --net mobilenetv3 --version verB --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 128 --lr 0.005:0.2:90 --sel_gpu 2 --training-epochs 200
+
+python3 train.py --net seresnet50 --version verA --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 64 --lr 0.005:0.2:90 --sel_gpu 2 --training-epochs 200
+python3 train.py --net seresnet50 --version verA --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 32 --lr 0.005:0.2:90 --sel_gpu 0 --training-epochs 200
+
+python3 train.py --net seresnet50 --version verC --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 64 --lr 0.001:0.5:120 --sel_gpu 2 --training-epochs 300
+
+@@@
+
+### Evaluate
+python3 evaluate_model.py --dataset VGGFace2 --partition test --path XXXXXXX --outpath results/resnetA --gpu 0
+python3 evaluate_model.py --dataset VGGFace2 --partition test --path XXXXXXX --outpath results/resnetB --gpu 0
+python3 evaluate_model.py --dataset VGGFace2 --partition test --path XXXXXXX --outpath results/resnetC --gpu 0
+
+python3 evaluate_model.py --dataset RAF-DB --partition test --path XXXXXXX --outpath results/senetA --gpu 0
+python3 evaluate_model.py --dataset RAF-DB --partition test --path XXXXXXX --outpath results/senetB --gpu 0
+python3 evaluate_model.py --dataset RAF-DB --partition test --path XXXXXXX --outpath results/senetC --gpu 0
+
+python3 evaluate_model.py --dataset RAF-DB --partition test --path XXXXXXX --outpath results/mobv3A --gpu 0
+python3 evaluate_model.py --dataset RAF-DB --partition test --path XXXXXXX --outpath results/mobv3B --gpu 0
+python3 evaluate_model.py --dataset RAF-DB --partition test --path XXXXXXX --outpath results/mobv3C --gpu 0
+
+python3 evaluate_model.py --dataset RAF-DB --partition test --path ../trained/_netresnet50_versionverA_pretrainingimagenet_datasetVGGFace2-RAF_preprocessingvggface2_augmentationdefault_batch128_lr0.005_0.2_20_sel_gpu1_training-epochs70_20201208_205226/checkpoint.46.hdf5 --outpath results/resnetA_bad_emo --gpu 0
+python3 evaluate_model.py --dataset RAF-DB --partition val --path ../trained/_netresnet50_versionverA_pretrainingimagenet_datasetVGGFace2-RAF_preprocessingvggface2_augmentationdefault_batch128_lr0.005_0.2_20_sel_gpu1_training-epochs70_20201208_205226/checkpoint.56.hdf5 --outpath results/resnetA_bad_emo --gpu 0
+python3 evaluate_model.py --dataset RAF-DB --partition test --path ../trained/_netresnet50_versionverA_pretrainingimagenet_datasetVGGFace2-RAF_preprocessingvggface2_augmentationdefault_batch128_lr0.005_0.2_20_sel_gpu1_training-epochs70_20201212_142114/checkpoint.05.hdf5 --outpath results/resnetA --gpu 0
+python3 evaluate_model.py --dataset RAF-DB --partition test --path ../trained/_netseresnet50_versionverA_pretrainingimagenet_datasetVGGFace2-RAF_preprocessingvggface2_augmentationdefault_batch128_lr0.005_0.2_90_sel_gpu1_training-epochs200_20201215_022121/checkpoint.12.hdf5 --outpath results/senetA --gpu 0
+python3 evaluate_model.py --dataset RAF-DB --partition test --path ../trained/_netseresnet50_versionverA_pretrainingimagenet_datasetVGGFace2-RAF_preprocessingvggface2_augmentationdefault_batch128_lr0.005_0.2_90_sel_gpu1_training-epochs200_20201215_022121/checkpoint.200.hdf5 --outpath results/senetA --gpu 0
+python3 evaluate_model.py --dataset RAF-DB --partition test --path ../trained/_netseresnet50_versionverA_pretrainingimagenet_datasetVGGFace2-RAF_preprocessingvggface2_augmentationdefault_batch128_lr0.005_0.2_90_sel_gpu1_training-epochs200_momentum_20201215_114648/checkpoint.09.hdf5 --outpath results/senetA --gpu 0
+python3 evaluate_model.py --dataset RAF-DB --partition test --path ../trained/_netseresnet50_versionverA_pretrainingimagenet_datasetVGGFace2-RAF_preprocessingvggface2_augmentationdefault_batch128_lr0.005_0.2_90_sel_gpu1_training-epochs200_momentum_20201215_114648/checkpoint.34.hdf5 --outpath results/senetA --gpu 0
+../trained/_netmobilenetv3_versionverA_pretrainingimagenet_datasetVGGFace2-RAF_preprocessingvggface2_augmentationdefault_batch128_lr0.005_0.2_90_sel_gpu0_training-epochs200_momentum_20201215_114845/
+
+
+
+python3 evaluate_model.py --dataset VGGFace2 --partition test --path ../trained/_netresnet50_versionverA_pretrainingimagenet_datasetVGGFace2-RAF_preprocessingvggface2_augmentationdefault_batch128_lr0.005_0.2_20_sel_gpu1_training-epochs70_20201208_205226/checkpoint.46.hdf5 --outpath results/resnetA_bad_emo --gpu 0
+python3 evaluate_model.py --dataset VGGFace2 --partition test --path ../trained/_netresnet50_versionverA_pretrainingimagenet_datasetVGGFace2-RAF_preprocessingvggface2_augmentationdefault_batch128_lr0.005_0.2_20_sel_gpu1_training-epochs70_20201208_205226/checkpoint.56.hdf5 --outpath results/resnetA_bad_emo --gpu 0
+python3 evaluate_model.py --dataset VGGFace2 --partition test --outpath results/senetA --gpu 2 --path
+
+python3 evaluate_model.py --dataset LFWPlus --partition test --path XXXXXXX --outpath results/resnetA --gpu 0
+python3 evaluate_model.py --dataset LFWPlus --partition test --path XXXXXXX --outpath results/resnetB --gpu 0
+python3 evaluate_model.py --dataset LFWPlus --partition test --path XXXXXXX --outpath results/resnetC --gpu 0
+
+python3 evaluate_model.py --dataset FairFace --partition test --path XXXXXXX --outpath results/resnetA --gpu 0
+python3 evaluate_model.py --dataset FairFace --partition test --path XXXXXXX --outpath results/resnetB --gpu 0
+python3 evaluate_model.py --dataset FairFace --partition test --path XXXXXXX --outpath results/resnetC --gpu 0
