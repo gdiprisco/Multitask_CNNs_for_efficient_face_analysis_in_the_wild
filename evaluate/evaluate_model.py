@@ -4,9 +4,11 @@ import keras, sys, os, re, argparse, time, csv, keras, pickle
 import numpy as np
 from glob import glob
 from tqdm import tqdm
+import time
 from datetime import datetime
 from collections import defaultdict
 from eval_utils import *
+from memory_usage import keras_model_memory_usage_in_bytes
 
 sys.path.append("../dataset")
 sys.path.append("../training")
@@ -169,7 +171,35 @@ def run_test(Dataset, modelpath, batch_size=64, partition='test'):
         image_paths.extend(batch[2])
         image_rois.extend(batch[3])
     check_prediction(image_paths, predictions, original_labels, image_rois)
+    GPU_bytes = keras_model_memory_usage_in_bytes(model=model, batch_size=batch_size)
+    print(" --- TEST RUNNED ---")
+    print("Memory usage {} bytes".format(GPU_bytes))
+    print(" -------------------")
     return image_paths, predictions, original_labels, image_rois
+
+
+def run_inference_time_test(Dataset, modelpath, partition='test'):
+    model, INPUT_SHAPE = load_keras_model(modelpath)
+    dataset = Dataset(partition=partition,
+                      target_shape=INPUT_SHAPE,
+                      augment=False,
+                      preprocessing='vggface2',
+                      age_annotation="number",
+                      include_gender=True,
+                      include_age_group=True,
+                      include_race=True)
+    data_gen = dataset.get_generator(batch_size=1, fullinfo=True)
+    print("Dataset batches %d" % len(data_gen))
+    start_time = time.time()
+    _ = model.evaluate_generator(data_gen, verbose=1, workers=4)
+    spent_time = time.time() - start_time
+    batch_average_time = spent_time / len(data_gen)
+    print("Evaluate time %d s" % spent_time)
+    print("Batch time %.10f s" % batch_average_time)
+    print(" --- INFERENCE TEST RUNNED ---")
+    print("Memory usage {} bytes".format(GPU_bytes))
+    print(" -----------------------------")
+
 
 def zip_reference(image_paths, predictions, original_labels, image_rois):
     reference = list()
@@ -328,3 +358,8 @@ if '__main__' == __name__:
 
 
     print("Total execution time: %s" % str(datetime.today() - start_time))
+
+    print("Running inference time test...")
+    run_inference_time_test(Dataset, args.inpath, partition=args.partition)
+
+    

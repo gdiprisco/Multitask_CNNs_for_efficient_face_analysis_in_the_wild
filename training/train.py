@@ -15,6 +15,7 @@ import sys
 sys.path.append("../dataset")
 from load_dataset import load_dataset
 from dataset_utils import MASK_VALUE
+from checkpoint_callback import HistoryMetric
 
 
 def get_modelbase(net, input_shape, weights):
@@ -255,10 +256,10 @@ MONITORED_METRIC = "val_emo{}_masked_categorical_accuracy"
 
 def get_versioned_metrics(version):
     if version in available_versions[0:2]:
-        return loss1, loss_weights1, accuracy1
+        return loss1, loss_weights1, accuracy1, 1
     elif version == available_versions[2]:
-        # return {**loss1, **loss2}, {**loss_weights1, **loss_weights2}, {**accuracy1, **accuracy2}
-        return loss2, loss_weights2, accuracy2
+        # return {**loss1, **loss2}, {**loss_weights1, **loss_weights2}, {**accuracy1, **accuracy2}, 1
+        return loss2, loss_weights2, accuracy2, 2
     else:
         raise Exception("Version {} not supported: unable to get right losses and accuracies".format(version)) 
 
@@ -360,8 +361,15 @@ if __name__ == "__main__":
     # # exit()
 
     
-    loss, loss_weights, accuracy = get_versioned_metrics(args.version)
+    loss, loss_weights, accuracy, metric_version = get_versioned_metrics(args.version)
     model.compile(loss=loss, loss_weights=loss_weights, optimizer=optimizer, metrics=accuracy)
+
+    monitors = {
+        "gender" : "val_gen{}_masked_categorical_accuracy".format(metric_version),
+        "age" : "age{}_masked_mean_absolute_error".format(metric_version),
+        "ethnicity" : "val_eth{}_masked_categorical_accuracy".format(metric_version),
+        "emotion" : "val_emo{}_masked_categorical_accuracy".format(metric_version),
+    }
 
     # Directory creating to store model checkpoints
     datetime = datetime.today().strftime('%Y%m%d_%H%M%S')
@@ -401,9 +409,12 @@ if __name__ == "__main__":
         dataset_validation = Dataset('val', target_shape=input_shape, augment=False, preprocessing=args.preprocessing)
 
         lr_sched = step_decay_schedule(initial_lr=initial_learning_rate,decay_factor=learning_rate_decay_factor, step_size=learning_rate_decay_epochs)
+        
         # checkpoint = keras.callbacks.ModelCheckpoint(filepath, verbose=1, save_best_only=False)
-        MONITORED_METRIC = MONITORED_METRIC.format(2 if args.version == "verC" else 1)
-        checkpoint = keras.callbacks.ModelCheckpoint(filepath, verbose=1, save_best_only=True, monitor=MONITORED_METRIC)
+        # MONITORED_METRIC = MONITORED_METRIC.format(2 if args.version == "verC" else 1)
+        # checkpoint = keras.callbacks.ModelCheckpoint(filepath, verbose=1, save_best_only=True, monitor=MONITORED_METRIC)
+        
+        checkpoint = HistoryMetric(filepath=filepath, monitors=monitors)
         tbCallBack = keras.callbacks.TensorBoard(log_dir=logdir, write_graph=True, write_images=True)
         callbacks_list = [lr_sched, checkpoint, tbCallBack]
 
