@@ -340,8 +340,8 @@ if __name__ == "__main__":
                 layer.add_loss(keras.regularizers.l2(weight_decay)(layer.kernel))
             if hasattr(layer, 'bias_regularizer') and layer.use_bias:
                 layer.add_loss(keras.regularizers.l2(weight_decay)(layer.bias))
-    #optimizer = keras.optimizers.sgd(momentum=0.9) if args.momentum else 'sgd'
-    optimizer = "adam"
+    optimizer = keras.optimizers.sgd(momentum=0.9) if args.momentum else 'sgd'
+    # optimizer = "adam"
 
     #TODO
     # optimizer = 'rmsprop'

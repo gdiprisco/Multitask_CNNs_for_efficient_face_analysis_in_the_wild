@@ -53,7 +53,7 @@ python3 evaluate_model.py --dataset RAF-DB --partition test --path ../trained/_n
 
 python3 evaluate_model.py --dataset VGGFace2 --partition test --path ../trained/_netresnet50_versionverA_pretrainingimagenet_datasetVGGFace2-RAF_preprocessingvggface2_augmentationdefault_batch128_lr0.005_0.2_20_sel_gpu1_training-epochs70_20201208_205226/checkpoint.46.hdf5 --outpath results/resnetA_bad_emo --gpu 0
 python3 evaluate_model.py --dataset VGGFace2 --partition test --path ../trained/_netresnet50_versionverA_pretrainingimagenet_datasetVGGFace2-RAF_preprocessingvggface2_augmentationdefault_batch128_lr0.005_0.2_20_sel_gpu1_training-epochs70_20201208_205226/checkpoint.56.hdf5 --outpath results/resnetA_bad_emo --gpu 0
-python3 evaluate_model.py --dataset VGGFace2 --partition test --outpath results/senetA --gpu 2 --path
+
 
 python3 evaluate_model.py --dataset LFWPlus --partition test --path XXXXXXX --outpath results/resnetA --gpu 0
 python3 evaluate_model.py --dataset LFWPlus --partition test --path XXXXXXX --outpath results/resnetB --gpu 0
@@ -62,3 +62,11 @@ python3 evaluate_model.py --dataset LFWPlus --partition test --path XXXXXXX --ou
 python3 evaluate_model.py --dataset FairFace --partition test --path XXXXXXX --outpath results/resnetA --gpu 0
 python3 evaluate_model.py --dataset FairFace --partition test --path XXXXXXX --outpath results/resnetB --gpu 0
 python3 evaluate_model.py --dataset FairFace --partition test --path XXXXXXX --outpath results/resnetC --gpu 0
+
+python3 evaluate_model.py --dataset VGGFace2 --partition test --outpath results/senetC --gpu 2 --path 
+python3 evaluate_model.py --dataset RAF-DB --partition test --outpath results/senetC --gpu 2 --path
+python3 evaluate_model.py --dataset LFWPlus --partition test --outpath results/senetC --gpu 2 --path
+python3 evaluate_model.py --dataset FairFace --partition test --outpath results/senetC --gpu 2 --path
+
+/user/gdiprisco/multitask/trained/_netseresnet50_versionverC_pretrainingimagenet_datasetVGGFace2-RAF_preprocessingvggface2_augmentationdefault_batch64_lr0.001_0.5_120_sel_gpu2_training-epochs400_20201226_223151/checkpoint.140.hdf5
+/user/gdiprisco/multitask/trained/_netseresnet50_versionverC_pretrainingimagenet_datasetVGGFace2-RAF_preprocessingvggface2_augmentationdefault_batch64_lr0.001_0.5_120_sel_gpu2_training-epochs400_20201225_104442/checkpoint.141.hdf5
