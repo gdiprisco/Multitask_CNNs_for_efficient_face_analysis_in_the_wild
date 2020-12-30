@@ -372,10 +372,10 @@ import keras
 from math import ceil
 from threading import Lock
 import tensorflow
-class DataGenerator(tensorflow.keras.utils.Sequence): # TODO VIGILANTE
+class DataGenerator(tensorflow.keras.utils.Sequence):
 
     'Generates data for Keras'
-    def __init__(self, data, target_shape, with_augmentation=True, batch_size=64, custom_augmentation=None, num_classes=None, preprocessing='full_normalization', fullinfo=False, rebalance=False, rebalance_factor=1):#, explode_label=False):
+    def __init__(self, data, target_shape, with_augmentation=True, batch_size=64, custom_augmentation=None, num_classes=None, preprocessing='full_normalization', fullinfo=False, rebalance=False, rebalance_factor=1, doublelabel=False):#, explode_label=False):
         if preprocessing not in ['full_normalization', 'z_normalization', 'vggface2', 'no_normalization']:
             raise Exception('unknown preprocessing: %s' % preprocessing)
         self.mutex = Lock()
@@ -397,6 +397,7 @@ class DataGenerator(tensorflow.keras.utils.Sequence): # TODO VIGILANTE
         self.num_classes=num_classes
         self.preprocessing = preprocessing
         self.fullinfo = fullinfo
+        self.doublelabel = doublelabel
         # self.explode_label = explode_label
         if preprocessing == 'vggface2':
             self.ds_means = VGGFACE2_MEANS
@@ -428,7 +429,7 @@ class DataGenerator(tensorflow.keras.utils.Sequence): # TODO VIGILANTE
         self.cur_index += self.batch_size
         self.mutex.release()
         data = self._load_batch(i)
-        return tuple(data) # TODO VIGILANTE
+        return tuple(data) 
         # return data
 
     # def on_epoch_end(self):
@@ -538,6 +539,9 @@ class DataGenerator(tensorflow.keras.utils.Sequence): # TODO VIGILANTE
             img = mean_std_normalize(img, self.ds_means, self.ds_stds)
         if self.target_shape[2]==3 and (len(img.shape)<3 or img.shape[2]<3):
             img = np.repeat(np.squeeze(img)[:,:,None], 3, axis=2)
+        
+        if self.doublelabel:
+            label = np.append(label, label)
         
         if self.fullinfo:
             return (img, label, d['img'], roi)

@@ -55,7 +55,6 @@ def test(text_gpu="0"):
     print("Saving model in {}...".format(directory))
     model.save("{}/ResNet50V2_baseline.h5".format(directory))
     print("Baseline model saved.")
-    # input("Press any key to continue...")
     del modelbase
     del model
     keras.backend.clear_session()
@@ -69,7 +68,6 @@ def test(text_gpu="0"):
     print("Saving model in {}...".format(directory))
     model.save("{}/ResNet50V2_ver_A.h5".format(directory))
     print("Ver. A model saved.")
-    # input("Press any key to continue...")
     del modelbase
     del model
     keras.backend.clear_session()
@@ -83,7 +81,6 @@ def test(text_gpu="0"):
     print("Saving model in {}...".format(directory))
     model.save("{}/ResNet50V2_ver_B.h5".format(directory))
     print("Ver. B model saved.")
-    # input("Press any key to continue...")
     del modelbase
     del model
     keras.backend.clear_session()
@@ -97,7 +94,6 @@ def test(text_gpu="0"):
     print("Saving model in {}...".format(directory))
     model.save("{}/ResNet50V2_ver_C.h5".format(directory))
     print("Ver. C model saved.")
-    # input("Press any key to continue...")
     del modelbase
     del model
     keras.backend.clear_session()

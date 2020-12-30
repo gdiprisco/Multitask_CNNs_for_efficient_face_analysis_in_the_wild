@@ -223,7 +223,7 @@ class RAFDBMulti:
     def get_num_samples(self):
         return len(self.data)
 
-    def get_generator(self, batch_size=64, fullinfo=False):
+    def get_generator(self, batch_size=64, fullinfo=False, doublelabel=False):
         if self.gen is None:
             self.gen = DataGenerator(data=self.data,
                                     target_shape=self.target_shape,
@@ -232,7 +232,8 @@ class RAFDBMulti:
                                     batch_size=batch_size,
                                     num_classes=self.get_num_classes(),
                                     preprocessing=self.preprocessing, 
-                                    fullinfo=fullinfo)
+                                    fullinfo=fullinfo,
+                                    doublelabel=doublelabel)
         return self.gen
 
     def get_num_classes(self):

@@ -93,6 +93,7 @@ class Model(ABC):
         low_level_features = self._aggregate_low_level_features(self._disjoint_bottom)
         concatenation = keras.layers.Concatenate()([low_level_features, gender1, age1, ethnicity1, emotion1])
         gender2, age2, ethnicity2, emotion2 = self._joint_branches(features=concatenation)
-        improved_model = keras.models.Model(self.model.input, [gender2, age2, ethnicity2, emotion2])
+        # improved_model = keras.models.Model(self.model.input, [gender2, age2, ethnicity2, emotion2])
+        improved_model = keras.models.Model(self.model.input, [gender1, age1, ethnicity1, emotion1, gender2, age2, ethnicity2, emotion2])
         self.set_unbuildable()
         return improved_model

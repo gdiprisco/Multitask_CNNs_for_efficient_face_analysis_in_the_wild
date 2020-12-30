@@ -16,15 +16,9 @@ LABELS = {
         "40-69" : 3,
         "70+" : 4 
     },
-    # "ethnicity_rev" : {
-    #     0: "African American",
-	#     1: "East Asian",
-	#     2: "Caucasian Latin",
-	#     3: "Asian Indian"
-    # },
     "ethnicity" : {
         "African American" : 0,
-	    "East Asian":1,
+	    "East Asian" : 1,
 	    "Caucasian Latin" : 2,
 	    "Asian Indian" : 3
     },

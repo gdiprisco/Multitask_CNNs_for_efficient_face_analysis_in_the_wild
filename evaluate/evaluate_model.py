@@ -43,8 +43,8 @@ available_datasets = {
         "dataset" : RAFDBMulti,
         "metrics" : {
             "gender" : categorical_accuracy,
-            "age" : raf_age_groups_accuracy,
-            "ethnicity" : raf_race_groups_accuracy,
+            "age" : None, #raf_age_groups_accuracy,
+            "ethnicity" : None, #raf_race_groups_accuracy,
             "emotion" : categorical_accuracy 
         },
     },
@@ -60,8 +60,8 @@ available_datasets = {
     "FairFace" : {
         "dataset" : FairFaceMulti,
         "metrics" : {
-            "gender" : categorical_accuracy,
-            "age" : fairface_age_groups_accuracy,
+            "gender" : None, #categorical_accuracy,
+            "age" : None, #fairface_age_groups_accuracy,
             "ethnicity" : categorical_accuracy,
             "emotion" : None
         }
@@ -92,7 +92,7 @@ def load_keras_model(filepath):
     if not version:
         raise Exception("Unable to infer model version from path splitting")
     version = version[0].replace("version", "")
-    loss, loss_weights, accuracy_metrics = get_versioned_metrics(version)
+    loss, loss_weights, accuracy_metrics, _ = get_versioned_metrics(version)
     model = keras.models.load_model(filepath, custom_objects=custom_objects, compile=False)
     model.compile(loss=loss, loss_weights=loss_weights, optimizer='sgd', metrics=accuracy_metrics)
     INPUT_SHAPE = (112, 112, 3)
@@ -160,10 +160,10 @@ def run_test(Dataset, modelpath, batch_size=64, partition='test'):
     predictions = defaultdict(list)
     for batch in tqdm(data_gen):
         res = model.predict(batch[0])
-        predictions["gender"].extend(res[0])
-        predictions["age"].extend([age[0] for age in res[1]])
-        predictions["ethnicity"].extend(res[2])
-        predictions["emotion"].extend(res[3])
+        predictions["gender"].extend(res[-4])
+        predictions["age"].extend([age[0] for age in res[-3]])
+        predictions["ethnicity"].extend(res[-2])
+        predictions["emotion"].extend(res[-1])
         original_labels["gender"].extend(batch[1][0])
         original_labels["age"].extend(batch[1][1])
         original_labels["ethnicity"].extend(batch[1][2])
@@ -191,11 +191,14 @@ def run_inference_time_test(Dataset, modelpath, partition='test'):
     data_gen = dataset.get_generator(batch_size=1, fullinfo=True)
     print("Dataset batches %d" % len(data_gen))
     start_time = time.time()
-    _ = model.evaluate_generator(data_gen, verbose=1, workers=4)
+    # _ = model.evaluate_generator(data_gen, verbose=1, workers=4)
+    for batch in tqdm(data_gen):
+        _ = model.predict(batch[0])
     spent_time = time.time() - start_time
     batch_average_time = spent_time / len(data_gen)
     print("Evaluate time %d s" % spent_time)
-    print("Batch time %.10f s" % batch_average_time)
+    print("Batch time %.10f s, FPS: %.3f" % (batch_average_time, 1/batch_average_time))
+    GPU_bytes = keras_model_memory_usage_in_bytes(model=model, batch_size=1)
     print(" --- INFERENCE TEST RUNNED ---")
     print("Memory usage {} bytes".format(GPU_bytes))
     print(" -----------------------------")
@@ -359,7 +362,7 @@ if '__main__' == __name__:
 
     print("Total execution time: %s" % str(datetime.today() - start_time))
 
-    print("Running inference time test...")
+    print("\nRunning inference time test...")
     run_inference_time_test(Dataset, args.inpath, partition=args.partition)
 
     

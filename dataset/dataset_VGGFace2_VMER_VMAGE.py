@@ -44,7 +44,7 @@ def _load_traits(identity_and_roi, gender_meta, age_meta, ethnicity_meta, age_an
                 if age_annotation == "class":
                     age =  regression_to_class(age)
                 elif age_annotation == "group":
-                    age = regression_to_group(age)
+                    age = fairface_age_regression_to_group(age)
                 ethnicity = get_ethnicity_meta(ethnicity_meta, identity)
                 emotion = MASK_VALUE
                 vgg2data[image_path] = {
@@ -181,36 +181,6 @@ def _load_dataset(imagesdir, partition_label, debug_max_num_samples=None):
     return data
 
 
-
-    # for item in tqdm(vgg2data):
-    #     path = os.path.join(imagesdir, '%s' % (d[2]))
-    #     img = cv2.imread(path)
-    #     roi = [int(x) for x in d[4:8]]
-    #     roi = enclosing_square(roi)
-    #     # roi = add_margin(roi, 0.2)
-    #     if partition.startswith("train") or partition.startswith('val'):
-    #         sample_partition = get_partition(category_label, sub_category_label)
-    #     else:
-    #         sample_partition = PARTITION_TEST
-
-    #     if img is not None:
-    #         example = {
-    #             'img': path,
-    #             'label': sub_category_label,
-    #             'roi': roi,
-    #             'part': sample_partition
-    #         }
-    #         if np.max(img) == np.min(img):
-    #             print('Warning, blank image: %s!' % path)
-    #         else:
-    #             data.append(example)
-    #     else:  # img is None
-    #         print("WARNING! Unable to read %s" % path)
-    #         n_discarded += 1
-    # print("Data loaded. %d samples (%d discarded)" % (len(data), n_discarded))
-    # return data
-
-
 class Vgg2DatasetMulti:
     def __init__(self,
                 partition='train',
@@ -253,11 +223,6 @@ class Vgg2DatasetMulti:
                 self.data = pickle.load(f)[:debug_max_num_samples]
                 print("Data loaded. %d samples, from cache" % (len(self.data)))
         except FileNotFoundError:
-            # global vgg2roi
-            # global vgg2gender
-            # global vgg2age
-            # global vgg2ethnicity
-
             print("Loading %s data from scratch" % partition)
             load_partition = "train" if partition_label == PARTITION_TRAIN or partition_label == PARTITION_VAL else "test"
 
@@ -301,12 +266,12 @@ class Vgg2DatasetMulti:
     def get_num_samples(self):
         return len(self.data)
 
-    def get_generator(self, batch_size=64, fullinfo=False):
+    def get_generator(self, batch_size=64, fullinfo=False, doublelabel=False):
         if self.gen is None:
             self.gen = DataGenerator(self.data, self.target_shape, with_augmentation=self.augment,
                                      custom_augmentation=self.custom_augmentation, batch_size=batch_size,
                                      num_classes=self.get_num_classes(), preprocessing=self.preprocessing, 
-                                     fullinfo=fullinfo)
+                                     fullinfo=fullinfo, doublelabel=doublelabel)
         return self.gen
 
     def get_num_classes(self):

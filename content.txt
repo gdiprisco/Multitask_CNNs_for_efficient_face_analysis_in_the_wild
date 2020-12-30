@@ -23,7 +23,21 @@ python3 train.py --net mobilenetv3 --version verB --pretraining imagenet --datas
 python3 train.py --net seresnet50 --version verA --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 64 --lr 0.005:0.2:90 --sel_gpu 2 --training-epochs 200
 python3 train.py --net seresnet50 --version verA --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 32 --lr 0.005:0.2:90 --sel_gpu 0 --training-epochs 200
 
-python3 train.py --net seresnet50 --version verC --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 64 --lr 0.001:0.5:120 --sel_gpu 2 --training-epochs 300
+
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+python3 train.py --net seresnet50 --version verA --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 64 --lr 0.001:0.5:120 --sel_gpu 2 --training-epochs 400
+python3 train.py --net seresnet50 --version verB --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 64 --lr 0.001:0.5:120 --sel_gpu 2 --training-epochs 400
+python3 train.py --net seresnet50 --version verC --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 64 --lr 0.001:0.5:120 --sel_gpu 2 --training-epochs 400
+
+python3 train.py --net mobilenetv3 --version verA --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 64 --lr 0.001:0.5:120 --sel_gpu 1 --training-epochs 400
+python3 train.py --net mobilenetv3 --version verB --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 64 --lr 0.001:0.5:120 --sel_gpu 1 --training-epochs 400
+python3 train.py --net mobilenetv3 --version verC --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 64 --lr 0.001:0.5:120 --sel_gpu 1 --training-epochs 400
+
+python3 train.py --net resnet50 --version verA --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 64 --lr 0.001:0.5:120 --sel_gpu 2 --training-epochs 400
+python3 train.py --net resnet50 --version verB --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 64 --lr 0.001:0.5:120 --sel_gpu 2 --training-epochs 400
+python3 train.py --net resnet50 --version verC --pretraining imagenet --dataset VGGFace2-RAF --preprocessing vggface2 --augmentation default --batch 64 --lr 0.001:0.5:120 --sel_gpu 2 --training-epochs 400
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
 
 @@@
 
@@ -67,6 +81,8 @@ python3 evaluate_model.py --dataset VGGFace2 --partition test --outpath results/
 python3 evaluate_model.py --dataset RAF-DB --partition test --outpath results/senetC --gpu 2 --path
 python3 evaluate_model.py --dataset LFWPlus --partition test --outpath results/senetC --gpu 2 --path
 python3 evaluate_model.py --dataset FairFace --partition test --outpath results/senetC --gpu 2 --path
+
+python3 evaluate_model.py --dataset RAF-DB --partition test --outpath results/senetB --gpu 1 --path
 
 /user/gdiprisco/multitask/trained/_netseresnet50_versionverC_pretrainingimagenet_datasetVGGFace2-RAF_preprocessingvggface2_augmentationdefault_batch64_lr0.001_0.5_120_sel_gpu2_training-epochs400_20201226_223151/checkpoint.140.hdf5
 /user/gdiprisco/multitask/trained/_netseresnet50_versionverC_pretrainingimagenet_datasetVGGFace2-RAF_preprocessingvggface2_augmentationdefault_batch64_lr0.001_0.5_120_sel_gpu2_training-epochs400_20201225_104442/checkpoint.141.hdf5

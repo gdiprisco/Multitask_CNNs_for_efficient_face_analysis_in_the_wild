@@ -258,8 +258,8 @@ def get_versioned_metrics(version):
     if version in available_versions[0:2]:
         return loss1, loss_weights1, accuracy1, 1
     elif version == available_versions[2]:
-        # return {**loss1, **loss2}, {**loss_weights1, **loss_weights2}, {**accuracy1, **accuracy2}, 1
-        return loss2, loss_weights2, accuracy2, 2
+        return {**loss1, **loss2}, {**loss_weights1, **loss_weights2}, {**accuracy1, **accuracy2}, 2
+        # return loss2, loss_weights2, accuracy2, 2
     else:
         raise Exception("Version {} not supported: unable to get right losses and accuracies".format(version)) 
 
@@ -435,9 +435,15 @@ if __name__ == "__main__":
             print("Warning: TEST ON CPU")
             os.environ["CUDA_VISIBLE_DEVICES"] = ''
 
-        model.fit_generator(generator=dataset_training.get_generator(batch_size),
-                            validation_data=dataset_validation.get_generator(batch_size),
-                            verbose=1, callbacks=callbacks_list, epochs=n_training_epochs, workers=8,
+        doublelabel = metric_version == 2
+        train_generator = dataset_training.get_generator(batch_size, doublelabel=doublelabel)
+        validation_generator = dataset_validation.get_generator(batch_size, doublelabel=doublelabel)
+        model.fit_generator(generator=train_generator,
+                            validation_data=validation_generator,
+                            verbose=1,
+                            callbacks=callbacks_list,
+                            epochs=n_training_epochs,
+                            workers=8,
                             initial_epoch=initial_epoch)
     elif args.mode == 'test':
         if args.test_epoch is None:

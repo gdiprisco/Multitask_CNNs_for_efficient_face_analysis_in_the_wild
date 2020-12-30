@@ -30,7 +30,7 @@ class MobileNetV3Large(Model):
         self._available_joint_branches = ["gen1", "age1", "eth1", "emo1", "gen2", "age2", "eth2", "emo2"]
         self._available_disjoint_branches = ["genb", "ageb", "ethb", "emob"]
         self._current_branch_name = ""
-        self.nlay = 12 #TODO verifica
+        self.nlay = 12 
         self.max_exp_lay_num = 14
     
     def _joint_top(self, features, num_classes, activation):
@@ -198,7 +198,6 @@ def test(text_gpu="0"):
     print("Saving model in {}...".format(directory))
     model.save("{}/MobileNetV3Large_baseline.h5".format(directory))
     print("Baseline model saved.")
-    # input("Press any key to continue...")
     del modelbase
     del model
     keras.backend.clear_session()
@@ -212,7 +211,6 @@ def test(text_gpu="0"):
     print("Saving model in {}...".format(directory))
     model.save("{}/MobileNetV3Large_ver_A.h5".format(directory))
     print("Ver. A model saved.")
-    # input("Press any key to continue...")
     del modelbase
     del model
     keras.backend.clear_session()
@@ -226,7 +224,6 @@ def test(text_gpu="0"):
     print("Saving model in {}...".format(directory))
     model.save("{}/MobileNetV3Large_ver_B.h5".format(directory))
     print("Ver. B model saved.")
-    # input("Press any key to continue...")
     del modelbase
     del model
     keras.backend.clear_session()
@@ -240,7 +237,6 @@ def test(text_gpu="0"):
     print("Saving model in {}...".format(directory))
     model.save("{}/MobileNetV3Large_ver_C.h5".format(directory))
     print("Ver. C model saved.")
-    # input("Press any key to continue...")
     del modelbase
     del model
     keras.backend.clear_session()
