@@ -66,14 +66,14 @@ class Model(ABC):
         return joint_model
 
     @abstractmethod
-    def _disjoint_top(self, features, num_classes, activation, improved):
+    def _disjoint_top(self, features, num_classes, activation):
         pass
 
-    def _disjoint_branches(self, improved=False): 
-        gender = self._disjoint_top(self._disjoint_bottom, STANDARD_CLASSES["gender"], STANDARD_ACT["gender"], improved)
-        age = self._disjoint_top(self._disjoint_bottom, STANDARD_CLASSES["age"], STANDARD_ACT["age"], improved)
-        ethnicity = self._disjoint_top(self._disjoint_bottom, STANDARD_CLASSES["ethnicity"], STANDARD_ACT["ethnicity"], improved)
-        emotion = self._disjoint_top(self._disjoint_bottom, STANDARD_CLASSES["emotion"], STANDARD_ACT["emotion"], improved)
+    def _disjoint_branches(self): 
+        gender = self._disjoint_top(self._disjoint_bottom, STANDARD_CLASSES["gender"], STANDARD_ACT["gender"])
+        age = self._disjoint_top(self._disjoint_bottom, STANDARD_CLASSES["age"], STANDARD_ACT["age"])
+        ethnicity = self._disjoint_top(self._disjoint_bottom, STANDARD_CLASSES["ethnicity"], STANDARD_ACT["ethnicity"])
+        emotion = self._disjoint_top(self._disjoint_bottom, STANDARD_CLASSES["emotion"], STANDARD_ACT["emotion"])
         return gender, age, ethnicity, emotion
 
     def disjoint_extraction_model(self):
@@ -87,11 +87,13 @@ class Model(ABC):
     def _aggregate_low_level_features(self, features):
         pass
 
-    def improved_disjoint_extraction_model(self): 
+    def improved_disjoint_extraction_model(self, reshape=False): 
         self.check_buildable()
-        gender1, age1, ethnicity1, emotion1 = self._disjoint_branches(improved=True)
+        gender1, age1, ethnicity1, emotion1 = self._disjoint_branches()
         low_level_features = self._aggregate_low_level_features(self._disjoint_bottom)
         concatenation = keras.layers.Concatenate()([low_level_features, gender1, age1, ethnicity1, emotion1])
+        if reshape:
+            concatenation = keras.layers.Reshape((1, 1, concatenation._keras_shape[-1]))(concatenation)
         gender2, age2, ethnicity2, emotion2 = self._joint_branches(features=concatenation)
         # improved_model = keras.models.Model(self.model.input, [gender2, age2, ethnicity2, emotion2])
         improved_model = keras.models.Model(self.model.input, [gender1, age1, ethnicity1, emotion1, gender2, age2, ethnicity2, emotion2])

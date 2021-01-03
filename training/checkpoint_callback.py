@@ -21,6 +21,8 @@ class HistoryMetric(Callback):
         save_checkpoint = not (epoch+1) % 25
 
         print("\nEpoch %05d" % (epoch+1))
+        if save_checkpoint:
+            print("Forcing model save.")
             
         if np.greater(gender_acc, self.best_gender_acc):
             print("%s improved from %0.5f to %0.5f" % (self.monitors["gender"], self.best_gender_acc, gender_acc))
@@ -57,7 +59,8 @@ class HistoryMetric(Callback):
         if save_checkpoint:
             filepath = self.filepath.format(epoch=epoch + 1, **logs)
             print("\nSaving model to %s\n" % filepath)
-            self.model.save(filepath, overwrite=True)
+            # https://stackoverflow.com/questions/57058178/why-does-keras-model-get-bigger-after-training
+            self.model.save(filepath, overwrite=True, include_optimizer=False)
 
             
 

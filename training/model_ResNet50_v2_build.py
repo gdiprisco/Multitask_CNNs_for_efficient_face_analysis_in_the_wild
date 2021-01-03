@@ -20,7 +20,7 @@ class ResNet50V2(Model):
         current_dense = self._available_joint_branches.pop(0)
         return keras.layers.Dense(num_classes, use_bias=True, activation=activation, name=current_dense)(features)
 
-    def _disjoint_top(self, features, num_classes, activation, improved=False):
+    def _disjoint_top(self, features, num_classes, activation):
         current_branch = self._available_disjoint_branches.pop(0)
         # appending the 4th block
         top_features = resnet_common.stack2(features, 512, 3, stride1=1, name='conv5_'+current_branch)
@@ -38,7 +38,7 @@ class ResNet50V2(Model):
         return keras.layers.GlobalAveragePooling2D(name='avg_pool_features')(aggregate)
 
 
-def test(text_gpu="0"):
+def test(text_gpu="1"):
     directory = "test_models"
     if not os.path.exists(directory):
         os.makedirs(directory)

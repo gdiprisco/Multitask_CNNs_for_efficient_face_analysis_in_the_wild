@@ -32,19 +32,20 @@ def get_modelbase(net, input_shape, weights):
         raise Exception("Model {} not supported.".format(net))
     return modelbase
 
-def get_modelversioned(modelbase, version):
+def get_modelversioned(modelbase, version, model_name):
     if version == "verA":
         model = modelbase.joint_extraction_model()
     elif version == "verB":
         model = modelbase.disjoint_extraction_model()
     elif version == "verC":
-        model = modelbase.improved_disjoint_extraction_model()
+        reshape = model_name == "mobilenetv3"
+        model = modelbase.improved_disjoint_extraction_model(reshape=reshape)
     else:
         raise Exception("Version {} not supported.".format(version))
     return model
 
 def get_model(net, input_shape, weights, version):
-    return get_modelversioned(get_modelbase(net, input_shape, weights), version)
+    return get_modelversioned(get_modelbase(net, input_shape, weights), version, net)
 
 
 def step_decay_schedule(initial_lr, decay_factor, step_size):
@@ -228,7 +229,7 @@ loss_weights1 = {
     "gen1" : 10.0,
     "age1" : 0.025,
     "eth1" : 10.0,
-    "emo1" : 20.0,
+    "emo1" : 50.0,
 }
 
 loss_weights2 = {
@@ -341,8 +342,8 @@ if __name__ == "__main__":
                 layer.add_loss(keras.regularizers.l2(weight_decay)(layer.kernel))
             if hasattr(layer, 'bias_regularizer') and layer.use_bias:
                 layer.add_loss(keras.regularizers.l2(weight_decay)(layer.bias))
-    optimizer = keras.optimizers.sgd(momentum=0.9) if args.momentum else 'sgd'
-    # optimizer = "adam"
+    # optimizer = keras.optimizers.sgd(momentum=0.9) if args.momentum else 'sgd'
+    optimizer = "adam"
 
     #TODO
     # optimizer = 'rmsprop'

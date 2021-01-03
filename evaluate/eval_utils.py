@@ -1,4 +1,5 @@
 import numpy as np
+import os, errno
 from sklearn.metrics import accuracy_score, mean_absolute_error
 import sys
 sys.path.append("../dataset")
@@ -29,3 +30,10 @@ def raf_age_groups_accuracy(predictions, originals):
 def fairface_age_groups_accuracy(predictions, originals):
     converted_predictions = [fairface_age_regression_to_group(f) for f in predictions]
     return accuracy_score(originals, converted_predictions)
+
+def silentremove(filename):
+    try:
+        os.remove(filename)
+    except OSError as e: # this would be "except OSError, e:" before Python 2.6
+        if e.errno != errno.ENOENT: # errno.ENOENT = no such file or directory
+            raise # re-raise exception if a different error occurred

@@ -33,9 +33,13 @@ class MobileNetV3Large(Model):
         self.nlay = 12 
         self.max_exp_lay_num = 14
     
-    def _joint_top(self, features, num_classes, activation):
+    def _joint_top(self, features, num_classes, activation, reshape=False):
         current_activation = self._available_joint_branches.pop(0)
-        layer = keras.layers.Conv2D(num_classes,(1,1),strides=(1,1),padding='same',use_bias=True)(features)
+        if reshape:
+            layer = keras.layers.Reshape((1, 1, features._keras_shape[-1]))(features)
+            layer = keras.layers.Conv2D(num_classes,(1,1),strides=(1,1),padding='same',use_bias=True)(layer)
+        else:
+            layer = keras.layers.Conv2D(num_classes,(1,1),strides=(1,1),padding='same',use_bias=True)(features)
         layer = keras.layers.Flatten()(layer)
         return keras.layers.Activation(activation, name=current_activation)(layer)
 
@@ -131,7 +135,7 @@ class MobileNetV3Large(Model):
         x = keras.layers.DepthwiseConv2D((kernel_size, kernel_size), strides=(1, 1), depth_multiplier=1, padding='same')(_inputs)
         return x
 
-    def _disjoint_top(self, features, num_classes, activation, improved=False):
+    def _disjoint_top(self, features, num_classes, activation):
         self.nlay = self.max_exp_lay_num - 2
         self._current_branch_name = self._available_disjoint_branches.pop(0)
 
@@ -157,8 +161,8 @@ class MobileNetV3Large(Model):
         basename = 'conv_2_{}'.format(self._current_branch_name)
         top_features = keras.layers.Conv2D(1280, (1, 1), strides=(1, 1), padding='same', use_bias=True,name=basename)(top_features)
         top_features = keras.layers.Activation(Hswish, name=basename+'_activation')(top_features)
-        top_features = self._joint_top(top_features, num_classes, activation)
-        return keras.layers.Reshape((1, 1, top_features._keras_shape[-1]))(top_features) if improved else top_features 
+        return self._joint_top(top_features, num_classes, activation)
+        # return keras.layers.Reshape((1, 1, top_features._keras_shape[-1]))(top_features) if improved else top_features 
 
     
     def _aggregate_low_level_features(self, features):
@@ -176,12 +180,13 @@ class MobileNetV3Large(Model):
         pooled_shape = (1, 1, aggregate._keras_shape[-1])
         aggregate = keras.layers.Reshape(pooled_shape)(aggregate)
         aggregate = keras.layers.Conv2D(1280, (1, 1), strides=(1, 1), padding='same', use_bias=True,name='conv_2_aggregate')(aggregate)
+        aggregate = keras.layers.Flatten()(aggregate)
         return keras.layers.Activation(Hswish, name='conv_2_aggregate_activation')(aggregate)
 
 
 
 
-def test(text_gpu="0"):
+def test(text_gpu="1"):
     directory = "test_models"
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -232,7 +237,7 @@ def test(text_gpu="0"):
     modelbase = MobileNetV3Large()
     print("Modelbase created")
     print("Model Ver. C")
-    model = modelbase.improved_disjoint_extraction_model()
+    model = modelbase.improved_disjoint_extraction_model(reshape=True)
     model.summary()
     print("Saving model in {}...".format(directory))
     model.save("{}/MobileNetV3Large_ver_C.h5".format(directory))

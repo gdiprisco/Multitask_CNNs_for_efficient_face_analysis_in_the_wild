@@ -35,7 +35,7 @@ class SEResNet50(Model):
         return keras.layers.Dense(num_classes, use_bias=True, activation=activation, name=current_dense)(features)
 
 
-    def _disjoint_top(self, features, num_classes, activation, improved=False):
+    def _disjoint_top(self, features, num_classes, activation):
         # # CODE FOR 'keras-squeeze-excite-network'
         # # SEResNet50 parameters, with bottleneck
         # N = [3, 4, 6, 3] # depth
@@ -74,7 +74,7 @@ class SEResNet50(Model):
         # return features
 
 
-def test(text_gpu="0"):
+def test(text_gpu="1"):
     directory = "test_models"
     if not os.path.exists(directory):
         os.makedirs(directory)

@@ -75,6 +75,8 @@ parser.add_argument('--partition', dest='partition', type=str, help='Source path
 parser.add_argument('--path', dest='inpath', type=str, help='Source path of HDF5 model to test')
 parser.add_argument('--gpu', dest="gpu", type=str, default="0", help="Gpu to use")
 parser.add_argument('--outpath', dest="outpath", type=str, default="results", help='Destination path of results file')
+parser.add_argument('--only_inference_time', action="store_true", help="Only inference time test will be executed")
+parser.add_argument('--inference_time', action="store_true", help="Also inference time test will be executed")
 parser.add_argument('--checkpoint', dest="checkpoint", type=int, help="Specify checkpoint if 'path' is the main directory of the model")
 args = parser.parse_args()
 
@@ -86,12 +88,21 @@ custom_objects = {
                 'HSigmoid': HSigmoid
 }
 
-
-def load_keras_model(filepath):
-    version = re.search("versionver[ABC]", os.path.split(os.path.split(filepath)[0])[1])
+def get_model_info(filepath):
+    model_dirname = os.path.split(os.path.split(filepath)[0])[1]
+    version = re.search("versionver[ABC]", model_dirname)
     if not version:
         raise Exception("Unable to infer model version from path splitting")
     version = version[0].replace("version", "")
+    modelname = re.search("_net[A-Za-z0-9]*", model_dirname)
+    if not modelname:
+        raise Exception("Unable to infer model name from path splitting")
+    modelname = modelname[0].replace("_net", "")
+    checkpoint = os.path.split(filepath)[1].split(".")[1]
+    return modelname, version, model_dirname, checkpoint
+
+def load_keras_model(filepath):
+    _, version, _, _ = get_model_info(filepath)
     loss, loss_weights, accuracy_metrics, _ = get_versioned_metrics(version)
     model = keras.models.load_model(filepath, custom_objects=custom_objects, compile=False)
     model.compile(loss=loss, loss_weights=loss_weights, optimizer='sgd', metrics=accuracy_metrics)
@@ -196,12 +207,14 @@ def run_inference_time_test(Dataset, modelpath, partition='test'):
         _ = model.predict(batch[0])
     spent_time = time.time() - start_time
     batch_average_time = spent_time / len(data_gen)
+    fps = 1/batch_average_time
     print("Evaluate time %d s" % spent_time)
-    print("Batch time %.10f s, FPS: %.3f" % (batch_average_time, 1/batch_average_time))
+    print("Batch time %.10f s, FPS: %.3f" % (batch_average_time, fps))
     GPU_bytes = keras_model_memory_usage_in_bytes(model=model, batch_size=1)
     print(" --- INFERENCE TEST RUNNED ---")
     print("Memory usage {} bytes".format(GPU_bytes))
     print(" -----------------------------")
+    return batch_average_time, fps, GPU_bytes, model.count_params()
 
 
 def zip_reference(image_paths, predictions, original_labels, image_rois):
@@ -268,61 +281,62 @@ if '__main__' == __name__:
     # else:
     #     raise Exception("Only .hdf5 files are supported.")
     
-    model_dirname, checkpoint = os.path.split(os.path.split(args.inpath)[0])[1], os.path.split(args.inpath)[1].split(".")[1]
-    # out_path = "results_{}_{}_of_checkpoint_{}_from{}.csv".format(args.dataset, args.partition, checkpoint, model_dirname)
+    modelname, version, model_dirname, checkpoint = get_model_info(args.inpath)
     out_path = "results_{}_{}_of_checkpoint_{}_from{}".format(args.dataset, args.partition, checkpoint, model_dirname)
     out_path = os.path.join(args.outpath, out_path)
-    pk_out_path = out_path+".pk"
-    csv_out_path = out_path+".csv"
-    # if os.path.exists(pk_out_path):
-    #     print("LOADING CACHED RESULTS...")
-    #     # reference = _refactor_data(readcsv(out_path)) # TODO
-    #     pk_data = pickle.load(open(pk_out_path, "rb"))
-    #     # image_paths = pk_data["image_paths"]
-    #     predictions = pk_data["predictions"]
-    #     original_labels = pk_data["original_labels"]
-    #     # image_rois = pk_data["image_rois"]
-    # else:
+    general_summary_data = [modelname.upper(), version, checkpoint, args.dataset, args.partition]
     
-    print("Running test from scratch ...")
-    image_paths, predictions, original_labels, image_rois  = run_test(Dataset, args.inpath, batch_size=64, partition=args.partition)
-    
-    # print(image_paths[0])
-    # print(predictions["gender"][0])
-    # print(original_labels["gender"][0])
-    # print(predictions["age"][0])
-    # print(original_labels["age"][0])
-    # print(predictions["ethnicity"][0])
-    # print(original_labels["ethnicity"][0])
-    # print(predictions["emotion"][0])
-    # print(original_labels["emotion"][0])
-    # print(image_rois[0])
-    # exit(1)
-    print("Managing data ...")
-    reference = zip_reference(image_paths, predictions, original_labels, image_rois)
-    # for i in reference[0]:
-    #     print(i)
-    # exit()
-    print("Writing CSV", csv_out_path, "...")
-    writecsv(csv_out_path, reference) # TODO better format CSV
-    print("Writing Pickle", pk_out_path, "...")
-    pk_data = {
-        "image_paths" : image_paths,
-        "predictions" : predictions,
-        "original_labels" : original_labels,
-        "image_rois" : image_rois
-    }
-    pickle.dump(pk_data, open(pk_out_path, "wb"))
+    if args.only_inference_time:
+        print("Only inference time will be calculated!")
+    else:
+        pk_out_path = out_path+".pk"
+        if os.path.exists(pk_out_path):
+            print("LOADING CACHED RESULTS...")
+            pk_data = pickle.load(open(pk_out_path, "rb"))
+            predictions = pk_data["predictions"]
+            original_labels = pk_data["original_labels"]
+        else:
+            print("Running test from scratch ...")
+            image_paths, predictions, original_labels, image_rois  = run_test(Dataset, args.inpath, batch_size=64, partition=args.partition)
+            print("Writing Pickle", pk_out_path, "...")
+            pk_data = {
+                "image_paths" : image_paths,
+                "predictions" : predictions,
+                "original_labels" : original_labels,
+                "image_rois" : image_rois
+            }
+            pickle.dump(pk_data, open(pk_out_path, "wb"))
+            # #################### CSV ####################
+            # print("Managing data ...")
+            # reference = zip_reference(image_paths, predictions, original_labels, image_rois)
+            # csv_out_path = out_path+".csv"
+            # print("Writing CSV", csv_out_path, "...")
+            # writecsv(csv_out_path, reference) # TODO better format CSV
+            # #############################################
+        print("Evaluating metrics of", modelname, version, "for", args.dataset, "...")
+        gender_acc, age_acc, ethnicity_acc, emotion_acc = evaluate_metrics(predictions, original_labels, available_datasets[args.dataset]["metrics"])
+        print("---------------------------------")
+        print(args.dataset.upper(), "accuracy:")
+        print("Gender", available_datasets[args.dataset]["metrics"]["gender"].__name__, gender_acc) if gender_acc is not None else print("Gender not available")
+        print("Age", available_datasets[args.dataset]["metrics"]["age"].__name__, age_acc) if age_acc is not None else print("Age not available")
+        print("Ethnicity", available_datasets[args.dataset]["metrics"]["ethnicity"].__name__, ethnicity_acc) if ethnicity_acc is not None else print("Ethnicity not available")
+        print("Emotion", available_datasets[args.dataset]["metrics"]["emotion"].__name__, emotion_acc) if emotion_acc is not None else print("Emotion not available")
+        print("---------------------------------") 
 
-    print("Evaluating metrics for", args.dataset, "...")
-    gender_acc, age_acc, ethnicity_acc, emotion_acc = evaluate_metrics(predictions, original_labels, available_datasets[args.dataset]["metrics"])
-    print("---------------------------------")
-    print(args.dataset.upper(), "accuracy:")
-    print("Gender", available_datasets[args.dataset]["metrics"]["gender"].__name__, gender_acc) if gender_acc is not None else print("Gender not available")
-    print("Age", available_datasets[args.dataset]["metrics"]["age"].__name__, age_acc) if age_acc is not None else print("Age not available")
-    print("Ethnicity", available_datasets[args.dataset]["metrics"]["ethnicity"].__name__, ethnicity_acc) if ethnicity_acc is not None else print("Ethnicity not available")
-    print("Emotion", available_datasets[args.dataset]["metrics"]["emotion"].__name__, emotion_acc) if emotion_acc is not None else print("Emotion not available")
-    print("---------------------------------") 
+        print("\nTabulating results in pickle file...")
+        summary_results = list()
+        if gender_acc is not None:
+            summary_results.append(general_summary_data + ["Gender", available_datasets[args.dataset]["metrics"]["gender"].__name__, gender_acc])
+        if age_acc is not None:
+            summary_results.append(general_summary_data + ["Age", available_datasets[args.dataset]["metrics"]["age"].__name__, age_acc])
+        if ethnicity_acc is not None:
+            summary_results.append(general_summary_data + ["Ethnicity", available_datasets[args.dataset]["metrics"]["ethnicity"].__name__, ethnicity_acc])
+        if emotion_acc is not None:
+            summary_results.append(general_summary_data + ["Emotion", available_datasets[args.dataset]["metrics"]["emotion"].__name__, emotion_acc])
+        pickle_summary_results = os.path.join(args.outpath, "summary_results.pk")
+        with open(pickle_summary_results, "ab") as pkf:
+            pickle.dump(summary_results, pkf) 
+        print("\nResults pickled with no error.\n")   
 
     # print("#################################")
     # model, INPUT_SHAPE = load_keras_model(args.inpath)
@@ -362,7 +376,12 @@ if '__main__' == __name__:
 
     print("Total execution time: %s" % str(datetime.today() - start_time))
 
-    print("\nRunning inference time test...")
-    run_inference_time_test(Dataset, args.inpath, partition=args.partition)
-
-    
+    if args.only_inference_time or args.inference_time:
+        print("\nRunning inference time test...")
+        inference_time, fps, GPU_bytes, params_count = run_inference_time_test(Dataset, args.inpath, partition=args.partition)
+        print("\nTabulating inference statistics in pickle file...")
+        summary_stats = [general_summary_data + [inference_time, fps, params_count, int(GPU_bytes)]]
+        pickle_summary_stats = os.path.join(args.outpath, "summary_stats.pk")
+        with open(pickle_summary_stats, "ab") as pkf:
+            pickle.dump(summary_stats, pkf) 
+        print("\nStatistics pickled with no error.\n\n\n")   
