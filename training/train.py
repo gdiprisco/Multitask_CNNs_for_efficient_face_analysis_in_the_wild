@@ -367,7 +367,7 @@ if __name__ == "__main__":
 
     monitors = {
         "gender" : "val_gen{}_masked_categorical_accuracy".format(metric_version),
-        "age" : "age{}_masked_mean_absolute_error".format(metric_version),
+        "age" : "val_age{}_masked_mean_absolute_error".format(metric_version),
         "ethnicity" : "val_eth{}_masked_categorical_accuracy".format(metric_version),
         "emotion" : "val_emo{}_masked_categorical_accuracy".format(metric_version),
     }
