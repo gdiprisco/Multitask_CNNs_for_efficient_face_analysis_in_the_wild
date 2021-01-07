@@ -5,14 +5,16 @@ from tabulate import tabulate
 from eval_utils import silentremove
 
 ############## PARAMS ################ #TODO argparse
-GPU = 2
-outpath = "results/thesis_results_400"
+GPU = 1
+ckp_number = 600
+only_inference_time = False
+inference_time = False
+
+outpath = "results/thesis_results_{ckp}".format(ckp=ckp_number)
 pathlist = sorted(glob(os.path.join("/user/gdiprisco/multitask/thesis_trained", "*"))) 
 datasets = ["VGGFace2", "RAF-DB", "LFWPlus", "FairFace"]
 partitions = ["test"] #, "train", "val"]
-checkpoint = "checkpoint.400.hdf5"
-only_inference_time = False
-inference_time = False
+checkpoint = "checkpoint.{ckp}.hdf5".format(ckp=ckp_number)
 ######################################
 
 
