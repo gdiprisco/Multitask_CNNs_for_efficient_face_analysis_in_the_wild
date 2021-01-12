@@ -432,13 +432,6 @@ class DataGenerator(tensorflow.keras.utils.Sequence):
         return tuple(data) 
         # return data
 
-    # def on_epoch_end(self):
-    #     self.mutex.acquire()
-    #     self.cur_index = 0
-    #     print('Shuffle set')
-    #     np.random.shuffle(self.data)
-    #     self.mutex.release()
-
     def on_epoch_end(self):
         self.mutex.acquire()
         self.cur_index = 0
@@ -492,11 +485,6 @@ class DataGenerator(tensorflow.keras.utils.Sequence):
         if isinstance(label,int) and self.num_classes>1:
             label = np.array(keras.utils.to_categorical(label, num_classes=self.num_classes))
         elif isinstance(label, tuple) and isinstance(self.num_classes, tuple):
-            # extended_categorical = label[0] if self.num_classes[0] == 1 else self._categorical_mask(label[0], self.num_classes[0])
-            # for i in range(1, len(label)):
-            #     categorical = label[i] if self.num_classes[i] == 1 else self._categorical_mask(label[i], self.num_classes[i])
-            #     extended_categorical = np.hstack([extended_categorical, categorical])
-            # label = extended_categorical
             extended_categorical = list()
             for i in range(0, len(label)):
                 categorical = label[i] if self.num_classes[i] == 1 else self._categorical_mask(label[i], self.num_classes[i])
@@ -554,21 +542,6 @@ class DataGenerator(tensorflow.keras.utils.Sequence):
             
             
     def _load_batch(self, start_index, load_pairs=False):
-        # def get_empty_stuff_old(item):
-        #     if item is None:
-        #         return None
-        #     stuff = []
-        #     #stuff = [len(item)*[]]
-        #     for j in range(len(item)):
-        #         # np.empty( [0]+list(item[j].shape)[1:], item[j].dtype)
-        #         stuff.append(list())
-        #     return stuff
-
-        # def get_empty_stuff_new(item):
-        #     if item is None:
-        #         return None
-        #     stuff = [list()] + [[list() for i in range(len(item)-1)]]
-        #     return stuff
         
         def get_empty_stuff_inc(item):
             if item is None:
@@ -578,28 +551,12 @@ class DataGenerator(tensorflow.keras.utils.Sequence):
                 stuff += [list(), list()]
             return stuff
 
-        # def get_empty_stuff_newnew(item):
-        #     if item is None:
-        #         return None
-        #     stuff = [list() for i in range(len(item))]
-        #     return stuff
-
         item = self._load(start_index)
         stuff = get_empty_stuff_inc(item)
         size_of_this_batch = min(self.batch_size, len(self.data) - start_index)
         for index in range(start_index, start_index+size_of_this_batch):
             if item is None:
                 item = self._load(index)
-            # print(len(item))
-
-            # for j in range(len(item)):
-            #     if j == 0:
-            #         stuff[j].append(item[j])
-            #     else:
-            #         stuff[1][j-1].append(item[j])
-            
-            # print(item[1], len(item[1]))
-            # print(stuff[1], len(stuff[1]))
 
             stuff[0].append(item[0]) #img
             for j in range(len(item[1])):
@@ -609,10 +566,6 @@ class DataGenerator(tensorflow.keras.utils.Sequence):
                 stuff[2].append(item[2])
                 stuff[3].append(item[3])
 
-            # print("@@@@@@@@@@@@@@@@", len(stuff))
-            # print("@@@@@@@@@@@@@@@@", len(item))
-            # for j in range(len(item)):
-            #     stuff[j].append(item[j])
             item = None
 
         stuff[0]=np.array(stuff[0])
@@ -623,14 +576,6 @@ class DataGenerator(tensorflow.keras.utils.Sequence):
         if self.fullinfo:
             stuff[2]=np.array(stuff[2])
             stuff[3]=np.array(stuff[3])
-        
-            # if len(stuff[j].shape)==2 and stuff[j].shape[1]==1:
-            #     stuff[j] = np.reshape(stuff[j], (stuff[j].shape[0],))
-                # elif stuff[j].shape[1] > 1: #TODO check
-            # if self.explode_label and j == 1:
-            #     stuff[j] = np.transpose(stuff[j])
-            # print(stuff[1][j].shape)
-        # exit(1)
         
         return stuff
 

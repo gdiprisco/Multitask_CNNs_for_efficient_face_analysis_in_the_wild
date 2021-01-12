@@ -12,8 +12,6 @@ from memory_usage import keras_model_memory_usage_in_bytes
 
 sys.path.append("../dataset")
 sys.path.append("../training")
-# sys.path.append("../training/scratch_models")
-# sys.path.append('../training/keras_vggface/keras_vggface')
 
 # from dataset_tools import cut
 # from antialiasing import BlurPool
@@ -113,28 +111,6 @@ def get_filepath_ck(main_filepath, checkpoint):
     tail = 'checkpoint.{}.hdf5'.format(str(checkpoint).zfill(2))
     return os.path.join(main_filepath, tail)
 
-# def evalds(Dataset, filepath, outf_path, partition, batch_size=64):
-#     print('Partition: %s' % partition)
-#     outf = open(outf_path, "a+")
-#     outf.write('Results for: %s\n' % filepath)
-#     model, INPUT_SHAPE = load_keras_model(filepath)
-
-#     dataset_test = Dataset(partition, target_shape=INPUT_SHAPE, augment=False, preprocessing='vggface2')
-
-#     data_gen = dataset_test.get_generator(batch_size)
-#     print("Dataset batches %d" % len(data_gen))
-#     start_time = time.time()
-#     result = model.evaluate_generator(data_gen, verbose=1, workers=4)
-#     spent_time = time.time() - start_time
-#     batch_average_time = spent_time / len(data_gen)
-#     print("Evaluate time %d s" % spent_time)
-#     print("Batch time %.10f s" % batch_average_time)
-#     o = "%s %f\n" % (partition, result[1])
-#     print("\n\n RES " + o)
-#     outf.write(o)
-
-#     outf.write('\n\n')
-#     outf.close()
 
 def check_prediction(image_paths, predictions, original_labels, image_rois):
     lp, lo = None, None
@@ -245,41 +221,18 @@ def evaluate_metrics(predictions, originals, metric):
         task_metric = metric[task]
         result[task] = task_metric(predictions[task], originals[task]) if task_metric is not None else None
     return result["gender"], result["age"], result["ethnicity"], result["emotion"]
-    # gender_acc = metric(predictions["gender"], originals["gender"]) if metric is not None else None
-    # age_acc = metric(predictions["age"], originals["age"]) if metric is not None else None
-    # ethnicity_acc = metric(predictions["ethnicity"], originals["ethnicity"]) if metric is not None else None
-    # emotion_acc = metric(predictions["emotion"], originals["emotion"]) if metric is not None else None
-    # return gender_acc, age_acc, ethnicity_acc, emotion_acc
     
-
-#TODO add inference (single sample) mode
 
 if '__main__' == __name__:
     if not args.inpath.endswith('.hdf5'): raise Exception("Only .hdf5 files are supported.")
     start_time = datetime.today()
     os.makedirs(args.outpath, exist_ok=True)
     Dataset = available_datasets[args.dataset]["dataset"]
-
-    # results_filename = "{}_{}_results".format(args.dataset, args.partition)
-
-    # if args.time:
-    #     out_path = os.path.join(args.outf, "{}_{}.txt".format(results_filename, start_time.strftime('%Y%m%d_%H%M%S')))
-    # else:
-    #     out_path = os.path.join(args.outf, results_filename+".txt")
     
     if args.gpu is not None:
         gpu_to_use = [str(s) for s in args.gpu.split(',') if s.isdigit()]
         os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(gpu_to_use)
         print("WARNING: Using GPU %s" % os.environ["CUDA_VISIBLE_DEVICES"])
-
-    # if args.inpath.endswith('.hdf5'):
-    #     in_path = args.inpath,
-    #     out_path = out_path
-    # elif args.checkpoint is not None:
-    #     in_path = get_filepath_ck(args.inpath, args.checkpoint),
-    #     out_path = "{}_{}{}".format(os.path.splitext(out_path)[0], "checkpoint_{}".format(args.checkpoint), os.path.splitext(out_path)[1])
-    # else:
-    #     raise Exception("Only .hdf5 files are supported.")
     
     modelname, version, model_dirname, checkpoint = get_model_info(args.inpath)
     out_path = "results_{}_{}_of_checkpoint_{}_from{}".format(args.dataset, args.partition, checkpoint, model_dirname)
@@ -337,42 +290,6 @@ if '__main__' == __name__:
         with open(pickle_summary_results, "ab") as pkf:
             pickle.dump(summary_results, pkf) 
         print("\nResults pickled with no error.\n")   
-
-    # print("#################################")
-    # model, INPUT_SHAPE = load_keras_model(args.inpath)
-    # loss = {
-    #     "gen1" : build_masked_loss(keras.losses.binary_crossentropy),
-    #     # "age1" : build_masked_loss(keras.losses.binary_crossentropy),
-    #     "age1" : build_masked_loss(keras.losses.mean_squared_error),
-    #     "eth1" : build_masked_loss(keras.losses.binary_crossentropy),
-    #     "emo1" : build_masked_loss(keras.losses.binary_crossentropy)
-    # }
-
-    # loss_weights = {
-    #     "gen1" : 1.0,
-    #     # "age1" : 1.0,
-    #     "age1" : 0.025,
-    #     "eth1" : 1.0,
-    #     "emo1" : 1.0
-    # }
-
-    # accuracy = {
-    #     "gen1" : build_masked_acc(keras.metrics.categorical_accuracy),
-    #     # "age1" : build_masked_acc(keras.metrics.categorical_accuracy),
-    #     "age1" : build_masked_acc(keras.metrics.mean_absolute_error),
-    #     "eth1" : build_masked_acc(keras.metrics.categorical_accuracy),
-    #     "emo1" : build_masked_acc(keras.metrics.categorical_accuracy)
-    # }
-    # model.compile(loss=loss, loss_weights=loss_weights, optimizer="sgd", metrics=accuracy)
-    # dataset = Dataset(partition=args.partition,
-    #                   target_shape=(112,112,3),
-    #                   augment=False,
-    #                   preprocessing='vggface2',
-    #                   age_annotation="number",
-    #                   include_gender=True,
-    #                   include_age_group=True,
-    #                   include_race=True)
-
 
     print("Total execution time: %s" % str(datetime.today() - start_time))
 

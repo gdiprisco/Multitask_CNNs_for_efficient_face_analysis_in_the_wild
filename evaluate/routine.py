@@ -5,7 +5,7 @@ from tabulate import tabulate
 from eval_utils import silentremove
 
 ############## PARAMS ################ #TODO argparse
-GPU = 1
+GPU = 2
 ckp_number = 600
 only_inference_time = False
 inference_time = False

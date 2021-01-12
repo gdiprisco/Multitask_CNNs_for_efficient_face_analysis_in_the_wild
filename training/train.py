@@ -81,9 +81,6 @@ def build_masked_loss(loss_function, mask_value=MASK_VALUE):
         mask = K.cast(K.not_equal(y_true, mask_value), K.floatx())
         masked_se_tensor = (y_true - y_pred) ** 2
         return K.sum(masked_se_tensor) / K.maximum(K.sum(mask), 1)
-    
-    # def masked_categorical_crossentropy(y_true, y_pred):
-    #     return masked_loss_function(y_true, y_pred)
 
     if loss_function is keras.losses.mean_squared_error:
         return masked_mean_squared_error
@@ -92,10 +89,6 @@ def build_masked_loss(loss_function, mask_value=MASK_VALUE):
     else:
         raise Exception("Masked loss: {} loss not supported.".format(loss_function.__name__))
 
-# def masked_accuracy(y_true, y_pred):
-#     total = K.sum(K.not_equal(y_true, MASK_VALUE))
-#     correct = K.sum(K.equal(y_true, K.round(y_pred)))
-#     return correct / total
 
 def build_masked_acc(acc_function, mask_value=MASK_VALUE):
 
@@ -107,14 +100,6 @@ def build_masked_acc(acc_function, mask_value=MASK_VALUE):
         masked_acc_tensor = K.cast(K.equal(class_y_true, class_y_pred), K.floatx()) * mask
         return K.sum(masked_acc_tensor) / K.maximum(K.sum(mask), 1)
 
-
-        # class_id_true = K.argmax(y_true, axis=-1)
-        # class_id_preds = K.argmax(y_pred, axis=-1)
-        # # Replace class_id_preds with class_id_true for recall here
-        # accuracy_mask = K.cast(K.equal(class_id_preds, INTERESTING_CLASS_ID), 'int32')
-        # class_acc_tensor = K.cast(K.equal(class_id_true, class_id_preds), 'int32') * accuracy_mask
-        # class_acc = K.sum(class_acc_tensor) / K.maximum(K.sum(accuracy_mask), 1)
-        # return class_acc
 
     def masked_mean_absolute_error(y_true, y_pred):
         mask = K.cast(K.not_equal(y_true, mask_value), K.floatx())
@@ -128,27 +113,6 @@ def build_masked_acc(acc_function, mask_value=MASK_VALUE):
     else:
         raise Exception("Masked accuracy: {} metric not supported.".format(acc_function.__name__))
 
-# def build_masked_accX(acc_function, mask_value=MASK_VALUE):
-#     """Builds a loss function that masks based on targets
-#     Args:       loss_function: The loss function to mask
-#                 mask_value: The value to mask in the targets
-#     Returns:    function: a loss function that acts like loss_function with masked inputs
-#     """
-#     def masked_categorical_accuracy(y_true, y_pred):
-#         mask = K.cast(K.not_equal(y_true, mask_value), K.floatx())
-#         return acc_function(y_true * mask, y_pred * mask)
-    
-#     def masked_mean_absolute_error(y_true, y_pred):
-#         return masked_acc_function(y_true, y_pred)
-    
-#     def masked_categorical_accuracy(y_true, y_pred):
-#         return masked_acc_function(y_true, y_pred)
-
-#     if acc_function == keras.metrics.mean_absolute_error:
-#         return masked_mean_absolute_error
-#     elif acc_function == keras.metrics.categorical_accuracy:
-#         return masked_categorical_accuracy
-#     return masked_acc_function
 
 def get_metrics(classes):
     print(classes)
@@ -179,37 +143,6 @@ available_normalizations = ['z_normalization', 'full_normalization', 'vggface2']
 available_augmentations = ['default', 'vggface2', 'autoaugment-rafdb', 'no']
 available_modes = ['train', 'training', 'test', 'train_inference', 'test_inference']
 
-# loss = {
-#     "gen1" : build_masked_loss(keras.losses.binary_crossentropy),
-#     # "age1" : build_masked_loss(keras.losses.binary_crossentropy),
-#     "age1" : build_masked_loss(keras.losses.mean_squared_error),
-#     "eth1" : build_masked_loss(keras.losses.binary_crossentropy),
-#     "emo1" : build_masked_loss(keras.losses.binary_crossentropy)
-# }
-
-# # loss = {
-# #     "gen1" : build_masked_loss(keras.losses.categorical_crossentropy),
-# #     # "age1" : build_masked_loss(keras.losses.binary_crossentropy),
-# #     "age1" : build_masked_loss(keras.losses.mean_squared_error),
-# #     "eth1" : build_masked_loss(keras.losses.categorical_crossentropy),
-# #     "emo1" : build_masked_loss(keras.losses.categorical_crossentropy)
-# # }
-
-# loss_weights = {
-#     "gen1" : 10.0,
-#     # "age1" : 1.0,
-#     "age1" : 0.025,
-#     "eth1" : 10.0,
-#     "emo1" : 20.0 # 50.0 # 100.0
-# }
-
-# accuracy = {
-#     "gen1" : build_masked_acc(keras.metrics.categorical_accuracy),
-#     # "age1" : build_masked_acc(keras.metrics.categorical_accuracy),
-#     "age1" : build_masked_acc(keras.metrics.mean_absolute_error),
-#     "eth1" : build_masked_acc(keras.metrics.categorical_accuracy),
-#     "emo1" : build_masked_acc(keras.metrics.categorical_accuracy)
-# }
 
 loss1 = {
     "gen1" : build_masked_loss(keras.losses.binary_crossentropy),
@@ -344,11 +277,8 @@ if __name__ == "__main__":
                 layer.add_loss(keras.regularizers.l2(weight_decay)(layer.bias))
     # optimizer = keras.optimizers.sgd(momentum=0.9) if args.momentum else 'sgd'
     optimizer = "adam"
-
-    #TODO
     # optimizer = 'rmsprop'
 
-    # TODO
     # if args.center_loss:
     #     loss = center_loss(feature_layer, keras.losses.categorical_crossentropy, 0.9, NUM_CLASSES, 0.01, features_dim=2048)
     # else:
@@ -361,7 +291,6 @@ if __name__ == "__main__":
     # print("Accuracies:", [a.__name__ for a in accuracy])
     # # exit()
 
-    
     loss, loss_weights, accuracy, metric_version = get_versioned_metrics(args.version)
     model.compile(loss=loss, loss_weights=loss_weights, optimizer=optimizer, metrics=accuracy)
 
@@ -410,10 +339,6 @@ if __name__ == "__main__":
         dataset_validation = Dataset('val', target_shape=input_shape, augment=False, preprocessing=args.preprocessing)
 
         lr_sched = step_decay_schedule(initial_lr=initial_learning_rate,decay_factor=learning_rate_decay_factor, step_size=learning_rate_decay_epochs)
-        
-        # checkpoint = keras.callbacks.ModelCheckpoint(filepath, verbose=1, save_best_only=False)
-        # MONITORED_METRIC = MONITORED_METRIC.format(2 if args.version == "verC" else 1)
-        # checkpoint = keras.callbacks.ModelCheckpoint(filepath, verbose=1, save_best_only=True, monitor=MONITORED_METRIC)
         
         checkpoint = HistoryMetric(filepath=filepath, monitors=monitors)
         tbCallBack = keras.callbacks.TensorBoard(log_dir=logdir, write_graph=True, write_images=True)

@@ -2,12 +2,16 @@ from glob import glob
 import numpy as np
 from collections import defaultdict
 from scipy.stats import ttest_ind
+from sklearn.metrics import cohen_kappa_score
 from sklearn.metrics import confusion_matrix
 from eval_utils import silentremove
 from tabulate import tabulate
 import pickle
 
-ckp_number = 300
+############## PARAMS ################ #TODO argparse
+ckp_number = 500
+######################################
+
 
 datasets = {
     "VGGFace2" : ["gender", "age", "ethnicity"], 
@@ -19,13 +23,13 @@ partition = "test"
 backbones = ["mobilenetv3", "resnet50", "seresnet50"]
 versions = ["verA", "verB", "verC"]
 inpath = "results/thesis_results_{ckp}/results_{dataset}_{partition}_of_checkpoint_{ckp}_from_net{backbone}_versionver[ABC]_*"
-outpath = "results/thesis_tstat_{ckp}/{aim}_{target}.txt"
-image_outpath = "results/thesis_mosaic_{ckp}/mosaic_{dataset}_{partition}_{backbone}_{version}.png"
+outpath = "results/thesis_tstat_{ckp}/{ckp}_{aim}_{target}.txt"
+image_outpath = "results/thesis_mosaic_{ckp}/{ckp}_mosaic_{dataset}_{partition}_{backbone}_{version}.png"
 
 def uncategorize(task, x, y):
     if task != "age":
         return np.argmax(x, axis=-1), np.argmax(y, axis=-1)
-    return x, y
+    return np.array(x), np.array(y)
     
 def task_confusion_matrix(result_dict, task):
     predicted = result_dict['predictions'][task]
@@ -82,31 +86,54 @@ def mosaic(data, outpath):
 #     mae = np.round(mae/(rows*columns), decimals=3) if mae is not None else None
 #     return mse, mae
 
-def statistic(v1, v2):
-    return ttest_ind(v1, v2).pvalue
+def statistic(v1, v2, metric):
+    if metric == "tstat":
+        return ttest_ind(v1, v2).pvalue
+    elif metric == "cohen":
+        return cohen_kappa_score(np.rint(v1).astype(int), np.rint(v2).astype(int))
+    else:
+        raise Exception("{} is not a supported metric.".format(metric))
  
 
-def run_tstat(task, verA, verB, verC, name=""):
+def run_stat(task, verA, verB, verC, name="", metric="tstat"):
     verAoriginals, verApredicted = uncategorize(task, verA['original_labels'][task], verA['predictions'][task])
     verBoriginals, verBpredicted = uncategorize(task, verB['original_labels'][task], verB['predictions'][task])
     verCoriginals, verCpredicted = uncategorize(task, verC['original_labels'][task], verC['predictions'][task])
     results = dict()
-    results["A-self"] = statistic(verAoriginals, verApredicted)
-    results["B-self"] = statistic(verBoriginals, verBpredicted)
-    results["C-self"] = statistic(verCoriginals, verCpredicted)
-    results["A-B"] = statistic(verApredicted, verBpredicted)
-    results["B-C"] = statistic(verBpredicted, verCpredicted)
-    results["C-A"] = statistic(verCpredicted, verApredicted)
+    results["A-self"] = statistic(verAoriginals, verApredicted, metric)
+    results["B-self"] = statistic(verBoriginals, verBpredicted, metric)
+    results["C-self"] = statistic(verCoriginals, verCpredicted, metric)
+    results["A-B"] = statistic(verApredicted, verBpredicted, metric)
+    results["B-A"] = statistic(verBpredicted, verApredicted, metric)
+    results["A-A"] = statistic(verApredicted, verApredicted, metric)
+    results["C-B"] = statistic(verCpredicted, verBpredicted, metric)
+    results["B-C"] = statistic(verBpredicted, verCpredicted, metric)
+    results["B-B"] = statistic(verBpredicted, verBpredicted, metric)
+    results["C-A"] = statistic(verCpredicted, verApredicted, metric)
+    results["A-C"] = statistic(verApredicted, verCpredicted, metric)
+    results["C-C"] = statistic(verCpredicted, verCpredicted, metric)
     line0 = [name, "Truth", "verA", "verB", "verC"]
-    line1 = ["verA", results["A-self"], "-", results["A-B"], results["C-A"]]
-    line2 = ["verB", results["B-self"], results["A-B"], "-", results["B-C"]]
-    line3 = ["verC", results["C-self"], results["C-A"], results["B-C"], "-"]
+    line1 = ["verA", results["A-self"], results["A-A"], results["A-B"], results["A-C"]]
+    line2 = ["verB", results["B-self"], results["B-A"], results["B-B"], results["B-C"]]
+    line3 = ["verC", results["C-self"], results["C-A"], results["C-B"], results["C-C"]]
     return [line0, line1, line2, line3]
 
 if __name__ == "__main__":
-    silentremove(outpath.format(ckp=ckp_number, aim="tstat", target="all"))
-    silentremove(outpath.format(ckp=ckp_number, aim="confusion_matrix", target="all"))
+    tstat_outpath = outpath.format(ckp=ckp_number, aim="tstat", target="all")
+    silentremove(tstat_outpath)
+    cohen_outpath = outpath.format(ckp=ckp_number, aim="cohen", target="all")
+    silentremove(cohen_outpath)
+    agreement_outpath = outpath.format(ckp=ckp_number, aim="agreement", target="all")
+    silentremove(agreement_outpath)
+    cm_outpath = outpath.format(ckp=ckp_number, aim="confusion_matrix", target="all")
+    silentremove(cm_outpath)
     # silentremove(outpath.format(ckp=ckp_number, aim="mosaic", target="*"))
+
+    print("Removed TSTAT old file:", tstat_outpath)
+    print("Removed COHEN old file:", cohen_outpath)
+    print("Removed AGREEMENT old file:", agreement_outpath)
+    print("Removed CONFUSION MATRIX old file:", cm_outpath)
+    # print("Removed MOSAIC old files:", )
 
     for backbone in backbones:
         for dataset in datasets.keys():
@@ -118,26 +145,26 @@ if __name__ == "__main__":
                 ckp=ckp_number
             )))
             verA = pickle.load(open(verA_path, "rb"))
-            mosaic(verA, outpath.format(
-                ckp=ckp_number,
-                dataset=dataset,
-                partition=partition,
-                backbone=backbone,
-                version="verA"))
+            # mosaic(verA, outpath.format(
+            #     ckp=ckp_number,
+            #     dataset=dataset,
+            #     partition=partition,
+            #     backbone=backbone,
+            #     version="verA"))
             verB = pickle.load(open(verB_path, "rb"))
-            mosaic(verB, outpath.format(
-                ckp=ckp_number,
-                dataset=dataset,
-                partition=partition,
-                backbone=backbone,
-                version="verB"))
+            # mosaic(verB, outpath.format(
+            #     ckp=ckp_number,
+            #     dataset=dataset,
+            #     partition=partition,
+            #     backbone=backbone,
+            #     version="verB"))
             verC = pickle.load(open(verC_path, "rb"))
-            mosaic(veC, outpath.format(
-                ckp=ckp_number,
-                dataset=dataset,
-                partition=partition,
-                backbone=backbone,
-                version="verC"))
+            # mosaic(verC, outpath.format(
+            #     ckp=ckp_number,
+            #     dataset=dataset,
+            #     partition=partition,
+            #     backbone=backbone,
+            #     version="verC"))
             for task in datasets[dataset]:
                 title = "{bb}_{task}_{dataset}_{partition}".format(
                     bb=backbone,
@@ -146,21 +173,35 @@ if __name__ == "__main__":
                     partition=partition
                 )
                 print("Running", task, "T-STAT...")
-                tstat_table = run_tstat(task, verA, verB, verC, title)
+                tstat_table = run_stat(task, verA, verB, verC, title, metric="tstat")
                 tab = tabulate(tstat_table, headers="firstrow", tablefmt="grid", numalign="right", stralign="center")
-                with open(outpath.format(ckp=ckp_number, aim="tstat", target="all"), "a") as fp:
+                with open(tstat_outpath, "a") as fp:
                     fp.write(tab+"\n")
+
+                print("Running", task, "COHEN KAPPA SCORE...")
+                cohen_table = run_stat(task, verA, verB, verC, title, metric="cohen")
+                tab = tabulate(cohen_table, headers="firstrow", tablefmt="grid", numalign="right", stralign="center")
+                with open(cohen_outpath, "a") as fp:
+                    fp.write(tab+"\n")
+
+                # print("Running", task, "AGREEMENT...")
+                # agreement_table = run_stat(task, verA, verB, verC, title, metric="agreement")
+                # tab = tabulate(agreement_table, headers="firstrow", tablefmt="grid", numalign="right", stralign="center")
+                # with open(agreement_outpath, "a") as fp:
+                #     fp.write(tab+"\n")
                 
                 if task != "age":
                     print("Evaluating", task, "confusion matrix...")
                     verA_cm = task_confusion_matrix(verA, task)
                     verB_cm = task_confusion_matrix(verB, task)
                     verC_cm = task_confusion_matrix(verC, task)
-                    with open(outpath.format(ckp=ckp_number, aim="confusion_matrix", target="all"), "a") as fp:
+                    # TODO plot on png confusion matrix instead of tabulate
+                    with open(cm_outpath, "a") as fp:
                         fp.write("\nConfusion Matrix version A " + title + "\n")
                         fp.write(tabulate(verA_cm,tablefmt="grid", numalign="right", stralign="center", floatfmt=".5f")+"\n")
                         fp.write("\nConfusion Matrix version B " + title + "\n")
                         fp.write(tabulate(verB_cm,tablefmt="grid", numalign="right", stralign="center", floatfmt=".5f")+"\n")
                         fp.write("\nConfusion Matrix version C " + title + "\n")
                         fp.write(tabulate(verC_cm,tablefmt="grid", numalign="right", stralign="center", floatfmt=".5f")+"\n")
-
+    print("TSTAT path:", tstat_outpath)
+    print("CONFUSION MATRIX path:", cm_outpath)
