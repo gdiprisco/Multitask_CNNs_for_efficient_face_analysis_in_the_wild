@@ -7,11 +7,16 @@ from sklearn.metrics import confusion_matrix
 from eval_utils import silentremove
 from tabulate import tabulate
 import pickle
+import os, sys
+import seaborn as sn
+import pandas as pd
+import matplotlib.pyplot as plt
+sys.path.append("../dataset")
+from dataset_utils import LABELS
 
 ############## PARAMS ################ #TODO argparse
 ckp_number = 500
 ######################################
-
 
 datasets = {
     "VGGFace2" : ["gender", "age", "ethnicity"], 
@@ -23,8 +28,8 @@ partition = "test"
 backbones = ["mobilenetv3", "resnet50", "seresnet50"]
 versions = ["verA", "verB", "verC"]
 inpath = "results/thesis_results_{ckp}/results_{dataset}_{partition}_of_checkpoint_{ckp}_from_net{backbone}_versionver[ABC]_*"
-outpath = "results/thesis_tstat_{ckp}/{ckp}_{aim}_{target}.txt"
-image_outpath = "results/thesis_mosaic_{ckp}/{ckp}_mosaic_{dataset}_{partition}_{backbone}_{version}.png"
+outpath = "results/thesis_stats_{ckp}/{ckp}_{aim}_{target}.txt"
+suboutpath = "results/thesis_stats_{ckp}/{aim}"
 
 def uncategorize(task, x, y):
     if task != "age":
@@ -36,6 +41,20 @@ def task_confusion_matrix(result_dict, task):
     original = result_dict['original_labels'][task]
     predicted, original = uncategorize(task, predicted, original)
     return confusion_matrix(original, predicted, normalize='true')
+
+def ordered_task_labels(task):
+    return [duple[0] for duple in sorted(LABELS[task].items(), key=lambda item:item[1])]
+
+def save_plot_confusion_matrix(result_dict, task, filepath):
+    array = task_confusion_matrix(result_dict, task)
+    labels = ordered_task_labels(task)
+    df_cm = pd.DataFrame(array, index=labels, columns=labels)
+    plt.figure(figsize=(10,7))
+    sn.set(font_scale=1.4) # for label size
+    ax = sn.heatmap(df_cm, annot=True, annot_kws={"size": 16}) # font size
+    ax.set(xlabel="Predictions", ylabel="Ground truth")
+    plt.savefig(filepath)
+    return array
 
 def mosaic(data, outpath):
     # predicted = result_dict['predictions'][task]
@@ -121,19 +140,28 @@ def run_stat(task, verA, verB, verC, name="", metric="tstat"):
 if __name__ == "__main__":
     tstat_outpath = outpath.format(ckp=ckp_number, aim="tstat", target="all")
     silentremove(tstat_outpath)
+    print("Removed TSTAT old file:", tstat_outpath)
+
     cohen_outpath = outpath.format(ckp=ckp_number, aim="cohen", target="all")
     silentremove(cohen_outpath)
-    agreement_outpath = outpath.format(ckp=ckp_number, aim="agreement", target="all")
-    silentremove(agreement_outpath)
+    print("Removed COHEN old file:", cohen_outpath)
+
+    # agreement_outpath = outpath.format(ckp=ckp_number, aim="agreement", target="all")
+    # silentremove(agreement_outpath)
+    # print("Removed AGREEMENT old file:", agreement_outpath)
+
     cm_outpath = outpath.format(ckp=ckp_number, aim="confusion_matrix", target="all")
     silentremove(cm_outpath)
-    # silentremove(outpath.format(ckp=ckp_number, aim="mosaic", target="*"))
-
-    print("Removed TSTAT old file:", tstat_outpath)
-    print("Removed COHEN old file:", cohen_outpath)
-    print("Removed AGREEMENT old file:", agreement_outpath)
     print("Removed CONFUSION MATRIX old file:", cm_outpath)
-    # print("Removed MOSAIC old files:", )
+
+    cm_plot_subfolder = suboutpath.format(ckp=ckp_number, aim="confusion_matrix")
+    os.makedirs(cm_plot_subfolder, exist_ok=True)
+    print("All confusion matrices in", cm_plot_subfolder, "will be overwritten...")
+
+    mosaic_subfolder = suboutpath.format(ckp=ckp_number, aim="mosaics")
+    os.makedirs(mosaic_subfolder, exist_ok=True)
+    print("All mosaics in", mosaic_subfolder, "will be overwritten...")
+
 
     for backbone in backbones:
         for dataset in datasets.keys():
@@ -192,10 +220,9 @@ if __name__ == "__main__":
                 
                 if task != "age":
                     print("Evaluating", task, "confusion matrix...")
-                    verA_cm = task_confusion_matrix(verA, task)
-                    verB_cm = task_confusion_matrix(verB, task)
-                    verC_cm = task_confusion_matrix(verC, task)
-                    # TODO plot on png confusion matrix instead of tabulate
+                    verA_cm = save_plot_confusion_matrix(verA, task, os.path.join(cm_plot_subfolder, title+"_verA.png"))
+                    verB_cm = save_plot_confusion_matrix(verB, task, os.path.join(cm_plot_subfolder, title+"_verB.png"))
+                    verC_cm = save_plot_confusion_matrix(verC, task, os.path.join(cm_plot_subfolder, title+"_verC.png"))
                     with open(cm_outpath, "a") as fp:
                         fp.write("\nConfusion Matrix version A " + title + "\n")
                         fp.write(tabulate(verA_cm,tablefmt="grid", numalign="right", stralign="center", floatfmt=".5f")+"\n")
