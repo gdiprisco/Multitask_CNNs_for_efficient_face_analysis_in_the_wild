@@ -1,6 +1,7 @@
 import keras
 import tensorflow as tf
 
+# https://stackoverflow.com/a/64359137
 def keras_model_memory_usage_in_bytes(model, *, batch_size: int):
     """
     Return the estimated memory usage of a given Keras model in bytes.

@@ -14,8 +14,8 @@ import matplotlib.pyplot as plt
 sys.path.append("../dataset")
 from dataset_utils import LABELS
 
-############## PARAMS ################ #TODO argparse
-ckp_number = 500
+############## PARAMS ################
+ckp_number = sys.argv[1]
 ######################################
 
 datasets = {
@@ -42,17 +42,31 @@ def task_confusion_matrix(result_dict, task):
     predicted, original = uncategorize(task, predicted, original)
     return confusion_matrix(original, predicted, normalize='true')
 
+def squeeze_label(label, task):
+    if task == "emotion":
+        return label[:3]
+    elif task == "ethnicity":
+        return "".join([s[0] for s in label.split()])
+    elif task == "gender":
+        return label.capitalize()
+    else:
+        return label
+
 def ordered_task_labels(task):
-    return [duple[0] for duple in sorted(LABELS[task].items(), key=lambda item:item[1])]
+    return [squeeze_label(duple[0], task) for duple in sorted(LABELS[task].items(), key=lambda item:item[1])]
 
 def save_plot_confusion_matrix(result_dict, task, filepath):
     array = task_confusion_matrix(result_dict, task)
     labels = ordered_task_labels(task)
     df_cm = pd.DataFrame(array, index=labels, columns=labels)
+    df_cm.style.set_properties(**{'text-align': 'center', 'vertical-align': 'center'})
     plt.figure(figsize=(10,7))
     sn.set(font_scale=1.4) # for label size
-    ax = sn.heatmap(df_cm, annot=True, annot_kws={"size": 16}) # font size
-    ax.set(xlabel="Predictions", ylabel="Ground truth")
+    heatmap = sn.heatmap(df_cm, annot=True, annot_kws={"size": 16, "va": 'center'}) # font size
+    cbar = heatmap.collections[0].colorbar
+    cbar.ax.set_yticklabels(cbar.ax.get_yticklabels(), rotation=90, va='center')
+    heatmap.set(xlabel="Predictions", ylabel="Ground truth")
+    plt.tight_layout()
     plt.savefig(filepath)
     return array
 
