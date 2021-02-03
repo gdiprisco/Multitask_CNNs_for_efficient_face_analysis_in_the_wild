@@ -11,8 +11,6 @@ import os, sys, random
 import seaborn as sn
 import pandas as pd
 import matplotlib.pyplot as plt
-sys.path.append("../dataset")
-from dataset_utils import LABELS
 from cv2 import cv2
 ############## PARAMS ################
 ckp_number = sys.argv[1]
@@ -28,36 +26,70 @@ partition = "test"
 backbones = ["mobilenetv3", "resnet50", "seresnet50"]
 versions = ["verA", "verB", "verC"]
 inpath = "results/thesis_results_{ckp}/results_{dataset}_{partition}_of_checkpoint_{ckp}_from_net{backbone}_versionver[ABC]_*"
-outpath = "results/thesis_stats_{ckp}/{ckp}_mosaic_{backbone}_{dataset}_{partition}.png"
+outpath = "mosaics/thesis_mosaics_{ckp}/{ckp}_mosaic_{backbone}_{dataset}_{partition}.png"
+
+squeeze_labels = {
+    "gender" : ["F", "M"],
+    "ethnicity" : ["AA", "EA", "CL", "AI"],
+    "emotion": [x.upper() for x in ["Sur", "Fea", "Dis", "Hap", "Sad", "Ang", "Neu"]]
+}
+
+def squeeze(task, value):
+    return str(int(round(value))) if task == "age" else squeeze_labels[task][value]
+
+def put_text(image, predictions, originals, current_index, pin):
+    stepx, stepy = 55, 30
+    x0, y0 = pin[0]+5, pin[1]+stepy
+    for row, (task, task_data) in enumerate(predictions.items()):
+        font_size = 0.8 if task == "emotion" else 1.0
+        y = y0 + row*stepy
+        for col, (_, ver_data) in enumerate(task_data.items()):
+            x = x0 + col*stepx
+            text = squeeze(task, ver_data[current_index])
+            cv2.putText(image,text,(x,y),cv2.FONT_HERSHEY_SIMPLEX,font_size,(255,255,255),2)
+        x = x + stepx + 5
+        text = squeeze(task, originals[task][current_index])
+        cv2.putText(image,text,(x,y),cv2.FONT_HERSHEY_SIMPLEX,font_size,(255,255,255),2)
+
+def add_border(src, percentage=0.05, color=(255,255,255)):
+    bottom = top = int(0.03 * src.shape[0])  # shape[0] = rows
+    right = left = int(0.03 * src.shape[1])  # shape[1] = cols
+    borderType = cv2.BORDER_CONSTANT
+    return cv2.copyMakeBorder(src, top, bottom, left, right, borderType, None, color)
 
 def create_mosaic(image_paths, predictions, originals, size):
-    # rows, columns = size
-    # imagex1, imagey1 = 224,224
-    # blbx0, blby0 = imagex1+1, imagey1+1
-    # blbx1, blby1 = blbx0+200, imagey1
-    # grbx0, grby0 =
-    # grbx1, grby1 = 
-    # for r in rows:
-    #     for c in columns:
-    #         current_index = r*c
-    #         image_path = image_paths[current_index]
-    #         image = cv2.imread(image_path)
-    #         assert image is not None, "Error loading image {}".format(image_path)
+    rows, columns = size
+    imagex1, imagey1 = 224,224
+    blbx0, blby0 = 0, 0
+    blbx1, blby1 = blbx0+168, len(originals)*30+10
+    grbx0, grby0 = blbx1+1, 0
+    grbx1, grby1 = grbx0+55, blby1
+    mosaic = None
+    for r in range(rows):
+        mosaic_row = None
+        for c in range(columns):
+            current_index = r*columns+c
+            image_path = image_paths[current_index]
+            image = cv2.imread(image_path)
+            assert image is not None, "Error loading image {}".format(image_path)
 
-    #         # # TODO add roi selection support
-    #         # if not (image_roi is None or avoid_roi):
-    #         #   image = cut(image, image_roi)
-
-    #         # values    
-            
-
-
-    #         image = cv2.resize(image, (image_dx, image_dy))
-    #         cv2.rectangle(image,(224,0),(200,224),(0,0,0),cv2.FILLED) # predictions box
-    #         cv2.rectangle(image,(424,0),(200,224),(0,255,0),cv2.FILLED) # annotations box
-    #         cv2.putText(image,str(image_value),(10,25),cv2.FONT_HERSHEY_SIMPLEX,1.0,(255,255,255),2)
-    #         cv2.rectangle(image,(91,0),(180,35),(0,0,255),cv2.FILLED)
-    #         cv2.putText(image,str(image_original_value),(100,25),cv2.FONT_HERSHEY_SIMPLEX,1.0,(255,255,255),2)
+            # # TODO add roi selection support
+            # if not (image_roi is None or avoid_roi):
+            #   image = cut(image, image_roi)
+              
+            image = cv2.resize(image, (imagex1, imagey1))
+            textimage = np.zeros((grby1, grbx1,3), np.uint8)
+            cv2.rectangle(textimage,(blbx0, blby0),(blbx1, blby1),(0,0,0),cv2.FILLED) # predictions box
+            cv2.rectangle(textimage,(grbx0, grby0),(grbx1, grby1),(72, 148, 114),cv2.FILLED) # annotations box
+            put_text(textimage, predictions, originals, current_index, (blbx0, blby0))
+            dowel = np.concatenate((textimage, image), axis=0)
+            dowel_frame = add_border(dowel)
+            mosaic_row = dowel_frame if mosaic_row is None else np.concatenate((mosaic_row, dowel_frame), axis=1)
+        mosaic = mosaic_row if mosaic is None else np.concatenate((mosaic, mosaic_row), axis=0)
+    return mosaic     
+            # cv2.putText(image,str(image_value),(10,25),cv2.FONT_HERSHEY_SIMPLEX,1.0,(255,255,255),2)
+            # cv2.rectangle(image,(91,0),(180,35),(0,0,255),cv2.FILLED)
+            # cv2.putText(image,str(image_original_value),(100,25),cv2.FONT_HERSHEY_SIMPLEX,1.0,(255,255,255),2)
 
 
 def convlab(label, task):
@@ -116,8 +148,8 @@ def mosaic(verA, verB, verC, task_list, outpath, size=(4,5)):
             elif originals[task] != tmp_originals:
                 raise Exception("Original labels unmatch between {} and its previous version".format(data_name))
     
-    # mosaic = create_mosaic(image_paths, predictions, originals, size)
-    # cv2.imwrite(outpath, mosaic)
+    mosaic = create_mosaic(image_paths, predictions, originals, size)
+    cv2.imwrite(outpath, mosaic)
     return outpath
 
 # def create_mosaic(reference, out_path, size=(4,5), avoid_roi=False, images_root=None):
@@ -188,4 +220,5 @@ if __name__ == "__main__":
                 backbone=backbone)
             print("\nComposing mosaic for", dataset, backbone, "...")
             mosaic(verA, verB, verC, task_list, tmp_outpath)
+            
 
