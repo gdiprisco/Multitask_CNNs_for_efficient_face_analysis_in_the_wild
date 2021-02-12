@@ -16,6 +16,7 @@ def _readcsv(csvpath, debug_max_num_samples=None):
     return np.array(data)
 
 def read():
+    # FIXME external inpath 
     inpath = '/user/gdiprisco/multitask/dataset/data/vggface2_data/annotations/identity_meta.csv'
 
     train = list()

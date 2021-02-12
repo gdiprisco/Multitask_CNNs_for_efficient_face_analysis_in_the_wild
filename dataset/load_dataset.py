@@ -34,6 +34,7 @@ class VGG2RAFDataset:
         self.custom_augmentation = custom_augmentation
         self.preprocessing = preprocessing
         self.rebalance_factor = 3
+        
         # # TRAIN AND VAL/TEST SEPARATE PROTOCOL
         # if partition == "train":
         #     self.data = [VGGFace2, RAFDB]

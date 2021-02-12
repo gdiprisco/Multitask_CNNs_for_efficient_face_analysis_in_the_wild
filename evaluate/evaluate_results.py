@@ -11,6 +11,7 @@ import os, sys
 import seaborn as sn
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.path as mpath
 sys.path.append("../dataset")
 from dataset_utils import LABELS
 
@@ -55,6 +56,11 @@ def squeeze_label(label, task):
 def ordered_task_labels(task):
     return [squeeze_label(duple[0], task) for duple in sorted(LABELS[task].items(), key=lambda item:item[1])]
 
+def fontsize(task):
+    return {"gender" : 56,
+            "ethnicity": 26,
+            "emotion": 20}.get(task)
+
 def save_plot_confusion_matrix(result_dict, task, filepath):
     array = task_confusion_matrix(result_dict, task)
     labels = ordered_task_labels(task)
@@ -62,13 +68,44 @@ def save_plot_confusion_matrix(result_dict, task, filepath):
     df_cm.style.set_properties(**{'text-align': 'center', 'vertical-align': 'center'})
     plt.figure(figsize=(10,7))
     sn.set(font_scale=1.4) # for label size
-    heatmap = sn.heatmap(df_cm, annot=True, annot_kws={"size": 16, "va": 'center'}) # font size
+    size = fontsize(task)
+    heatmap = sn.heatmap(df_cm, annot=True, annot_kws={"size": size, "va": 'center'}) # font size
     cbar = heatmap.collections[0].colorbar
     cbar.ax.set_yticklabels(cbar.ax.get_yticklabels(), rotation=90, va='center')
     heatmap.set(xlabel="Predictions", ylabel="Ground truth")
     plt.tight_layout()
     plt.savefig(filepath)
     return array
+
+
+def accuracy_score(predictions, originals, thresholds):
+    scores = dict()
+    for th in thresholds:
+        counter = 0
+        for pred, orig in zip(predictions, originals):
+            error = abs(pred-orig)
+            if error >= th:
+                counter += 1
+        scores[th] = 100 * (1 - counter/len(predictions))
+    return scores
+
+def save_plot_cumulative_score(result_dict, task, filepath):
+    predictions = result_dict['predictions'][task]
+    originals = result_dict['original_labels'][task]
+    thresholds = [t for t in range(1, 11)]
+    scores = accuracy_score(predictions, originals, thresholds)
+    ys = list(scores.values())
+    _, ax = plt.subplots()
+    plt.plot([t-1 for t in thresholds], ys, '-gD')
+    plt.grid()
+    ax.set_xticks(np.arange(0, len(thresholds), step=1))
+    ax.set_xticklabels(thresholds)
+    ax.set_yticks(np.arange(0, 101, step=10))
+    ax.set_xlabel('Error tolerance (years)')
+    ax.set_ylabel('Cumulative score (%)')
+    ax.set(facecolor = "#cfd8dc")
+    plt.savefig(filepath, bbox_inches="tight", dpi=300)
+    return scores
 
 
 def statistic(v1, v2, metric):
@@ -124,6 +161,10 @@ if __name__ == "__main__":
     os.makedirs(cm_plot_subfolder, exist_ok=True)
     print("All confusion matrices in", cm_plot_subfolder, "will be overwritten...")
 
+    cs_plot_subfolder = suboutpath.format(ckp=ckp_number, aim="cumulative_score")
+    os.makedirs(cs_plot_subfolder, exist_ok=True)
+    print("All cumulative scores in", cs_plot_subfolder, "will be overwritten...")
+
     for backbone in backbones:
         for dataset in datasets.keys():
             print("\nOpening", dataset, backbone, "results...")
@@ -173,5 +214,15 @@ if __name__ == "__main__":
                         fp.write(tabulate(verB_cm,tablefmt="grid", numalign="right", stralign="center", floatfmt=".5f")+"\n")
                         fp.write("\nConfusion Matrix version C " + title + "\n")
                         fp.write(tabulate(verC_cm,tablefmt="grid", numalign="right", stralign="center", floatfmt=".5f")+"\n")
+                else:
+                    print("Evaluating", task, "cumulative score...")
+                    verA_cs = save_plot_cumulative_score(verA, task, os.path.join(cs_plot_subfolder, title+"_verA.png"))
+                    print("Version A cumulative score", verA_cs)
+                    verB_cs = save_plot_cumulative_score(verB, task, os.path.join(cs_plot_subfolder, title+"_verB.png"))
+                    print("Version B cumulative score", verB_cs)
+                    verC_cs = save_plot_cumulative_score(verC, task, os.path.join(cs_plot_subfolder, title+"_verC.png"))
+                    print("Version C cumulative score", verC_cs)
+
+
     print("TSTAT path:", tstat_outpath)
     print("CONFUSION MATRIX path:", cm_outpath)

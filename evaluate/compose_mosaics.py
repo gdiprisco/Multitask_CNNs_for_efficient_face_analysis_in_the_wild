@@ -16,6 +16,8 @@ from cv2 import cv2
 ckp_number = sys.argv[1]
 ######################################
 
+ROWS, COLUMNS = 2,10
+
 datasets = {
     "VGGFace2" : ["gender", "age", "ethnicity"], 
     "RAF-DB" : ["emotion"],
@@ -26,7 +28,7 @@ partition = "test"
 backbones = ["mobilenetv3", "resnet50", "seresnet50"]
 versions = ["verA", "verB", "verC"]
 inpath = "results/thesis_results_{ckp}/results_{dataset}_{partition}_of_checkpoint_{ckp}_from_net{backbone}_versionver[ABC]_*"
-outpath = "mosaics/thesis_mosaics_{ckp}/{ckp}_mosaic_{backbone}_{dataset}_{partition}.png"
+outpath = "mosaics/thesis_mosaics_" + str(ROWS) + "_" + str(COLUMNS) + "_{ckp}/{ckp}_mosaic_{backbone}_{dataset}_{partition}.png"
 
 squeeze_labels = {
     "gender" : ["F", "M"],
@@ -108,7 +110,7 @@ def get_originals(data_dict, task, indices):
     return [convlab(data_dict['original_labels'][task][index], task) for index in indices]
     
 
-def mosaic(verA, verB, verC, task_list, outpath, size=(4,5)):
+def mosaic(verA, verB, verC, task_list, outpath, size=(ROWS,COLUMNS)):
     rows, columns = size
     indices = dict()
     predictions = defaultdict(dict)

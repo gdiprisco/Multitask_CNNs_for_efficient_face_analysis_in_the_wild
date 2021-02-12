@@ -164,7 +164,7 @@ def _load_dataset(imagesdir, partition_label, debug_max_num_samples=None):
         age = vgg2data[image_path]["age"]
         ethnicity = vgg2data[image_path]["ethnicity"]
         emotion = vgg2data[image_path]["emotion"]
-        labels = (gender, age, ethnicity, emotion) # TODO correct according to multi label train method
+        labels = (gender, age, ethnicity, emotion) 
         sample = {
             'img': path,
             'label': labels,

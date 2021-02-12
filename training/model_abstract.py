@@ -95,7 +95,6 @@ class Model(ABC):
         if reshape:
             concatenation = keras.layers.Reshape((1, 1, concatenation._keras_shape[-1]))(concatenation)
         gender2, age2, ethnicity2, emotion2 = self._joint_branches(features=concatenation)
-        # improved_model = keras.models.Model(self.model.input, [gender2, age2, ethnicity2, emotion2])
         improved_model = keras.models.Model(self.model.input, [gender1, age1, ethnicity1, emotion1, gender2, age2, ethnicity2, emotion2])
         self.set_unbuildable()
         return improved_model
